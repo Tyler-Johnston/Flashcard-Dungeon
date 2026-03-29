@@ -221,22 +221,6 @@
   }
 }
 
-// ─── Inventory ────────────────────────────────────────────────────────────────
-
-.inventory {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.inv-label {
-  font-family: var(--font-ui);
-  font-size: clamp(0.58rem, 1.8vw, 0.68rem);
-  color: var(--text-dim);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 .inv-items {
   display: flex;
   flex-wrap: wrap;
@@ -244,26 +228,41 @@
 }
 
 .inv-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   background: var(--surface-raise);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  color: var(--text-dim);
-  font-family: var(--font-ui);
-  font-size: clamp(0.62rem, 1.9vw, 0.74rem);
-  letter-spacing: 0.06em;
-  padding: 0.35rem 0.7rem;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  padding: 0;
+  transition: border-color 0.15s, background 0.15s;
 
   @media (hover: hover) {
     &:hover {
       border-color: var(--ember-dim);
-      color: var(--ember);
       background: rgba(232, 131, 58, 0.06);
     }
   }
 }
 
+.inv-icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background-image: url('/sprites/rpgItems.png');
+  background-size: 256px 256px; // 2x scale
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+
+  &.item-potion { background-position:   0px    0px; }
+  &.item-shield { background-position: -192px  -64px; }
+  &.item-crit { background-position: -224px -128px; }
+  &.item-scroll { background-position: 0px -192px; }
+}
 // ─── Abandon ─────────────────────────────────────────────────────────────────
 
 .leave-btn {
@@ -418,4 +417,22 @@
   @media (hover: hover) {
     &:hover { color: var(--text); }
   }
+}
+
+// ─── Item Icons ───────────────────────────────────────────────────────────────
+
+.item-icon {
+  display: block;
+  width: 48px;
+  height: 48px;
+  background-image: url('/sprites/rpgItems.png');
+  background-size: 384px 384px;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  margin: 0 auto 0.25rem;
+
+  &.item-potion { background-position:   0px    0px; }
+  &.item-shield { background-position: -288px  -96px; }
+  &.item-crit   { background-position:   0px -144px; }
+  &.item-scroll { background-position:  -48px -336px; }
 }

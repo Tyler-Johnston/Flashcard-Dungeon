@@ -26,6 +26,7 @@
       <div class="loot-options">
         @for (item of lootOffer()!; track item.id) {
           <div class="loot-card">
+            <span class="item-icon item-{{ item.type }}"></span>
             <span class="item-name">{{ item.name }}</span>
             <span class="item-desc">{{ item.description }}</span>
 
@@ -134,7 +135,7 @@
         <div class="inv-items">
           @for (item of inventory(); track item.id) {
             <button class="inv-item" (click)="useItem(item)" [title]="item.description">
-              {{ item.name }}
+              <span class="inv-icon item-{{ item.type }}"></span>
             </button>
           }
         </div>
