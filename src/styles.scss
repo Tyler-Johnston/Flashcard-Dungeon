@@ -49,6 +49,7 @@ body {
       rgba(255,255,255,0.005) 2px,
       rgba(255,255,255,0.005) 4px
     );
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-card);
   font-size: clamp(0.95rem, 2.5vw, 1.05rem);

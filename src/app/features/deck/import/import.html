@@ -2,7 +2,7 @@
   <h1>Flashcard Dungeon</h1>
 
   <div class="hero-frame">
-    <img [src]="heroSpriteUrl" alt="Enemy" class="hero-sprite" draggable="false" />
+    <img [src]="heroSpriteUrl" alt="Monster" class="hero-sprite" draggable="false" />
   </div>
 
   <!-- File Upload -->
@@ -25,20 +25,52 @@
     </div>
   }
 
-  <!-- Deck List -->
-  @if (decks().length > 0) {
-    <div class="deck-list">
+  <!-- Deck Groups -->
+  @if (deckGroups().length > 0) {
+    <div class="deck-groups">
       <h2>Your Decks</h2>
-      @for (deck of decks(); track deck.id) {
-        <div class="deck-card">
-          <div class="deck-info">
-            <span class="deck-name">{{ deck.name }}</span>
-          </div>
-          <div class="deck-actions">
-            <button class="btn play"    (click)="startRun(deck)">▶ Play</button>
-            <button class="btn journal" (click)="openJournal(deck)">≡ Journal</button>
-            <button class="btn delete"  (click)="deleteDeck(deck)">✕</button>
-          </div>
+
+      @for (group of deckGroups(); track group.label) {
+        <div class="deck-group">
+
+          <button class="group-header" (click)="toggleGroup(group.label)">
+            <span class="group-label">{{ group.label }}</span>
+            <span class="group-range">{{ group.range }}</span>
+            <span class="group-count">{{ group.decks.length }}</span>
+            <span class="group-chevron" [class.collapsed]="group.collapsed">▾</span>
+          </button>
+
+          @if (!group.collapsed) {
+            @for (stats of group.decks; track stats.deck.id) {
+              <div class="deck-card">
+                <div class="deck-top">
+                  <span class="deck-name">{{ stats.deck.name }}</span>
+                  <span class="deck-completion">{{ stats.completion }}%</span>
+                </div>
+
+                <div class="deck-progress-bar">
+                  @for (seg of progressSegments(stats); track seg.state) {
+                    <div class="progress-seg state-{{ seg.state }}"
+                         [style.width.%]="seg.pct">
+                    </div>
+                  }
+                </div>
+
+                <div class="deck-meta">
+                  <span class="meta-item">{{ stats.totalCards }} cards</span>
+                  <span class="meta-item">{{ stats.counts[2] }} in review</span>
+                  <span class="meta-item">{{ stats.counts[0] }} new</span>
+                </div>
+
+                <div class="deck-actions">
+                  <button class="btn play"    (click)="startRun(stats)">▶ Play</button>
+                  <button class="btn journal" (click)="openJournal(stats)">≡ Journal</button>
+                  <button class="btn delete"  (click)="deleteDeck(stats)">✕</button>
+                </div>
+              </div>
+            }
+          }
+
         </div>
       }
     </div>

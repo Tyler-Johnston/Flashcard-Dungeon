@@ -22,7 +22,7 @@
     color: var(--text-dim);
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 }
 
@@ -144,33 +144,91 @@
   }
 }
 
-// ─── Deck List ────────────────────────────────────────────────────────────────
+// ─── Deck Groups ──────────────────────────────────────────────────────────────
 
-.deck-list {
+.deck-groups {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.5rem, 2vw, 0.75rem);
+  gap: 0.35rem;
+  padding-bottom: 2rem;
 }
 
-.deck-card {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  background: var(--card-bg);
+.deck-group {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: clamp(0.85rem, 3vw, 1.1rem) clamp(1rem, 3vw, 1.35rem);
-  transition: border-color 0.2s;
+  overflow: hidden;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  background: var(--surface);
+  border: none;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
 
   @media (hover: hover) {
-    &:hover { border-color: var(--border-glow); }
+    &:hover { background: var(--surface-raise); }
   }
 }
 
-.deck-info {
-  min-width: 0;
-  flex: 1 1 60%;
+.group-label {
+  font-family: var(--font-ui);
+  font-size: clamp(0.68rem, 2vw, 0.78rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  flex: 1;
+  text-align: left;
+}
+
+.group-range {
+  font-family: var(--font-ui);
+  font-size: clamp(0.58rem, 1.6vw, 0.66rem);
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+}
+
+.group-count {
+  font-family: var(--font-ui);
+  font-size: clamp(0.58rem, 1.6vw, 0.66rem);
+  color: var(--text-dim);
+  letter-spacing: 0.07em;
+}
+
+.group-chevron {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  transition: transform 0.2s ease;
+  display: inline-block;
+
+  &.collapsed { transform: rotate(-90deg); }
+}
+
+// ─── Deck Card ────────────────────────────────────────────────────────────────
+
+.deck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  padding: clamp(0.75rem, 3vw, 1rem) clamp(0.85rem, 3vw, 1.15rem);
+  transition: background 0.15s;
+
+  @media (hover: hover) {
+    &:hover { background: var(--surface); }
+  }
+}
+
+.deck-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .deck-name {
@@ -181,14 +239,61 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: block;
+  min-width: 0;
+  flex: 1;
 }
+
+.deck-completion {
+  font-family: var(--font-ui);
+  font-size: clamp(0.68rem, 2vw, 0.78rem);
+  letter-spacing: 0.08em;
+  color: var(--ember);
+  flex-shrink: 0;
+}
+
+// ─── Mini Progress Bar ────────────────────────────────────────────────────────
+
+.deck-progress-bar {
+  display: flex;
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 2px;
+  background: var(--surface-raise);
+}
+
+.progress-seg {
+  height: 100%;
+  border-radius: 999px;
+
+  &.state-0 { background: var(--border); }          // New — subtle
+  &.state-1 { background: var(--hard); }             // Learning — amber
+  &.state-3 { background: var(--again); }            // Relearning — red
+  &.state-2 { background: var(--good); }             // Review — green
+}
+
+// ─── Deck Meta ────────────────────────────────────────────────────────────────
+
+.deck-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  font-family: var(--font-ui);
+  font-size: clamp(0.55rem, 1.5vw, 0.64rem);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+// ─── Deck Actions ─────────────────────────────────────────────────────────────
 
 .deck-actions {
   display: flex;
   gap: clamp(0.35rem, 1.5vw, 0.5rem);
-  flex-shrink: 0;
-  flex: 1 1 auto;
   justify-content: flex-end;
 }
 
