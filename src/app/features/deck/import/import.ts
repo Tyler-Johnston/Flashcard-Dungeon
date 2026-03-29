@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DeckImportService } from '../../../core/services/deck-import';
 import { IndexedDbService, Deck } from '../../../core/services/indexed-db';
 import { Router } from '@angular/router';
+import { EnemyService } from '../../../core/services/enemy';
 
 @Component({
   selector: 'app-import',
@@ -18,6 +19,7 @@ export class ImportComponent {
   decks = signal<Deck[]>([]);
   status = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
   message = signal('');
+  private enemyService = inject(EnemyService);
 
   async ngOnInit() {
     this.decks.set(await this.idb.getAllDecks());
@@ -40,27 +42,35 @@ export class ImportComponent {
     }
   }
 
-  async startRun(deck: Deck) {
-    const cards = await this.idb.getDueCards(deck.id);
-    if (cards.length === 0) {
-      this.message.set('No cards due for this deck right now!');
-      this.status.set('error');
-      return;
-    }
-
-    await this.idb.saveRunState({
-      id: 'current',
-      deckId: deck.id,
-      hp: 100,
-      maxHp: 100,
-      roomsCleared: 0,
-      cardQueue: cards.map(c => c.id),
-      powerups: [],
-      startedAt: Date.now(),
-    });
-
-    this.router.navigate(['/dungeon']);
+async startRun(deck: Deck) {
+  const cards = await this.idb.getDueCards(deck.id);
+  if (cards.length === 0) {
+    this.message.set('No cards due for this deck right now!');
+    this.status.set('error');
+    return;
   }
+
+  const firstEnemy = this.enemyService.getEnemyForRoom(1);
+
+  await this.idb.saveRunState({
+    id: 'current',
+    deckId: deck.id,
+    hp: 100,
+    maxHp: 100,
+    currentRoom: 1,
+    totalRooms: 3,
+    currentEnemy: firstEnemy,
+    enemyHp: firstEnemy.maxHp,
+    consecutiveAgain: 0,
+    cardQueue: cards.map(c => c.id),
+    inventory: [],
+    activeEffects: [],
+    powerups: [],
+    startedAt: Date.now(),
+  });
+
+  this.router.navigate(['/dungeon']);
+}
 
   async deleteDeck(deck: Deck) {
     const cards = await this.idb.getCardsByDeck(deck.id);

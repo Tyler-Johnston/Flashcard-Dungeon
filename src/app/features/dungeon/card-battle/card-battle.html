@@ -2,35 +2,99 @@
 
   @if (runOver()) {
     <div class="run-over">
-      @if (playerHp() <= 0) {
+      @if (victory()) {
+        <h2>🏆 Dungeon Cleared!</h2>
+        <p>You defeated all enemies and slew the Dragon.</p>
+      } @else if (playerHp() <= 0) {
         <h2>💀 Defeated...</h2>
         <p>The dungeon claims another adventurer.</p>
       } @else {
         <h2>⚔️ Room Cleared!</h2>
-        <p>{{ enemyHp() <= 0 ? 'Enemy defeated!' : 'All cards answered.' }}</p>
-        <p class="sub">Cards reviewed this run will be scheduled by FSRS — come back tomorrow for the next batch.</p>
+        <p>All cards answered.</p>
       }
       <div class="run-over-actions">
-        <button class="btn good" (click)="playAgain()">▶ Play Another Deck</button>
+        <button class="btn good" (click)="playAgain()">▶ Play Again</button>
         <button class="btn hard" (click)="goBack()">← Back to Decks</button>
       </div>
     </div>
 
-  } @else if (currentCard()) {
+  } @else if (lootOffer()) {
+    <div class="loot-screen">
+      <h2>⚔️ Enemy Defeated!</h2>
+      <p class="loot-subtitle">Choose an item to take — or skip.</p>
 
-    <div class="hud">
-      <app-hp-bar label="Player" [current]="playerHp()" [max]="100" color="green" />
-      <app-hp-bar label="Enemy"  [current]="enemyHp()"  [max]="100" color="red" />
+      <div class="loot-options">
+        @for (item of lootOffer()!; track item.id) {
+          <div class="loot-card">
+            <span class="item-name">{{ item.name }}</span>
+            <span class="item-desc">{{ item.description }}</span>
+
+            @if (inventory().length >= INVENTORY_CAP) {
+              <p class="cap-warning">Inventory full — discard one to take this</p>
+              <div class="discard-list">
+                @for (inv of inventory(); track inv.id) {
+                  <button class="btn hard discard-btn"
+                          (click)="discardAndTake(inv, item)">
+                    Discard {{ inv.name }}
+                  </button>
+                }
+              </div>
+            } @else {
+              <button class="btn good" (click)="takeLoot(item)">Take</button>
+            }
+          </div>
+        }
+      </div>
+
+      <button class="btn skip-btn" (click)="skipLoot()">Skip loot</button>
     </div>
 
+  } @else if (currentCard()) {
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-section">
+        <app-hp-bar label="Player" [current]="playerHp()" [max]="100" color="green" />
+      </div>
+      <div class="room-indicator">
+        Room {{ currentRoom() }} / {{ run()?.totalRooms }}
+        @if (currentRoom() > (run()?.totalRooms ?? 3)) { — BOSS }
+      </div>
+      <div class="hud-section">
+        <app-hp-bar [label]="currentEnemy()?.name ?? 'Enemy'"
+                    [current]="enemyHp()"
+                    [max]="currentEnemy()?.maxHp ?? 100"
+                    color="red" />
+      </div>
+    </div>
+
+    <!-- Enemy Info -->
+    @if (currentEnemy()) {
+      <div class="enemy-info">
+        <span class="enemy-name">{{ currentEnemy()!.name }}</span>
+        @if (enemyService.getAbilityDescription(currentEnemy()!) ) {
+          <span class="enemy-ability">
+            {{ enemyService.getAbilityDescription(currentEnemy()!) }}
+          </span>
+        }
+      </div>
+    }
+
+    <!-- Status Message -->
+    <div class="status-msg" [class.visible]="statusMessage() !== null">
+      {{ statusMessage() }}
+    </div>
+
+    <!-- Damage Flash -->
     <div class="damage-flash"
          [class.visible]="damage() !== null"
          [class.negative]="(damage() ?? 0) < 0">
       @if (damage() !== null) {
-        {{ damage()! > 0 ? '- ' + damage() : 'Enemy heals +' + (damage()! * -1) }}
+        {{ damage()! > 0 ? 'Enemy -' + damage() : 'Player -' + (damage()! * -1) }}
       }
     </div>
 
+    <!-- Card -->
     <div class="card" [class.flipped]="flipped()" (click)="flip()">
       <div class="card-inner">
         <div class="card-front">
@@ -43,6 +107,7 @@
       </div>
     </div>
 
+    <!-- Rating Buttons -->
     <div class="ratings">
       @if (flipped()) {
         <button class="btn again" (click)="rate(Rating.Again)">Again</button>
@@ -51,6 +116,20 @@
         <button class="btn easy"  (click)="rate(Rating.Easy)">Easy</button>
       }
     </div>
+
+    <!-- Inventory -->
+    @if (inventory().length > 0) {
+      <div class="inventory">
+        <span class="inv-label">Inventory ({{ inventory().length }}/{{ INVENTORY_CAP }})</span>
+        <div class="inv-items">
+          @for (item of inventory(); track item.id) {
+            <button class="inv-item" (click)="useItem(item)" [title]="item.description">
+              {{ item.name }}
+            </button>
+          }
+        </div>
+      </div>
+    }
 
   } @else {
     <p>No cards due. Come back later!</p>

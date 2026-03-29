@@ -1,7 +1,40 @@
 import { Injectable } from '@angular/core';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
-// --- Schema Types ---
+// --- Enums ---
+
+export type EnemyTier = 1 | 2 | 3 | 'boss';
+
+export type ItemType = 'potion' | 'scroll' | 'shield' | 'crit';
+
+export type EnemyAbility =
+  | 'none'
+  | 'shuffle'       // Goblin Scholar — shuffles card queue
+  | 'revive'        // Skeleton — revives once at 20 HP
+  | 'suppress-crit' // Dark Mage — Easy deals Good damage only
+  | 'troll-heal'    // Troll — heals when player rates Hard
+  | 'curse'         // Lich — 2x Again in a row skips next card
+  | 'no-mercy'      // Mimic — Hard treated same as Again
+  | 'enrage';       // Dragon — doubles ATK at 50% HP
+
+// --- Core Types ---
+
+export interface Item {
+  id: string;
+  type: ItemType;
+  name: string;
+  description: string;
+}
+
+export interface Enemy {
+  id: string;
+  name: string;
+  tier: EnemyTier;
+  maxHp: number;
+  atk: number;
+  ability: EnemyAbility;
+  lootTable: ItemType[];  // item types this enemy can drop
+}
 
 export interface Deck {
   id: string;
@@ -16,7 +49,6 @@ export interface Card {
   front: string;
   back: string;
   tags: string[];
-  // FSRS scheduling fields
   due: number;
   stability: number;
   difficulty: number;
@@ -24,7 +56,7 @@ export interface Card {
   scheduledDays: number;
   reps: number;
   lapses: number;
-  state: 0 | 1 | 2 | 3; // New | Learning | Review | Relearning
+  state: 0 | 1 | 2 | 3;
   lastReview: number | null;
 }
 
@@ -33,8 +65,14 @@ export interface RunState {
   deckId: string;
   hp: number;
   maxHp: number;
-  roomsCleared: number;
-  cardQueue: string[];   // card IDs queued for this run
+  currentRoom: number;    // 1, 2, 3, then boss
+  totalRooms: number;     // always 3 before boss
+  currentEnemy: Enemy;
+  enemyHp: number;
+  consecutiveAgain: number; // tracks Lich curse
+  cardQueue: string[];
+  inventory: Item[];
+  activeEffects: string[];
   powerups: string[];
   startedAt: number;
 }
@@ -66,19 +104,20 @@ export class IndexedDbService {
   private db!: IDBPDatabase<FlashcardDungeonDB>;
 
   async init(): Promise<void> {
-    this.db = await openDB<FlashcardDungeonDB>('flashcard-dungeon', 1, {
+    this.db = await openDB<FlashcardDungeonDB>('flashcard-dungeon', 2, {
       upgrade(db) {
-        // Decks store
-        const deckStore = db.createObjectStore('decks', { keyPath: 'id' });
-        deckStore.createIndex('by-name', 'name');
-
-        // Cards store
-        const cardStore = db.createObjectStore('cards', { keyPath: 'id' });
-        cardStore.createIndex('by-deck', 'deckId');
-        cardStore.createIndex('by-due', 'due');
-
-        // Run store (single record: key = 'current')
-        db.createObjectStore('run', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('decks')) {
+          const deckStore = db.createObjectStore('decks', { keyPath: 'id' });
+          deckStore.createIndex('by-name', 'name');
+        }
+        if (!db.objectStoreNames.contains('cards')) {
+          const cardStore = db.createObjectStore('cards', { keyPath: 'id' });
+          cardStore.createIndex('by-deck', 'deckId');
+          cardStore.createIndex('by-due', 'due');
+        }
+        if (!db.objectStoreNames.contains('run')) {
+          db.createObjectStore('run', { keyPath: 'id' });
+        }
       },
     });
   }
