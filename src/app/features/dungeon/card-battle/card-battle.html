@@ -46,19 +46,21 @@
         }
       </div>
 
-      <button class="btn skip-btn" (click)="skipLoot()">Skip loot</button>
+      <button class="skip-btn" (click)="skipLoot()">Skip loot</button>
     </div>
 
   } @else if (currentCard()) {
 
-    <!-- HUD -->
     <div class="hud">
       <div class="hud-section">
         <app-hp-bar label="Player" [current]="playerHp()" [max]="100" color="green" />
       </div>
       <div class="room-indicator">
-        Room {{ currentRoom() }} / {{ run()?.totalRooms }}
-        @if (currentRoom() > (run()?.totalRooms ?? 3)) { — BOSS }
+        @if (currentRoom() > (run()?.totalRooms ?? 4) - 1) {
+          ⚔️ Boss
+        } @else {
+          Room {{ currentRoom() }} / {{ (run()?.totalRooms ?? 4) - 1 }}
+        }
       </div>
       <div class="hud-section">
         <app-hp-bar [label]="currentEnemy()?.name ?? 'Enemy'"
@@ -68,11 +70,10 @@
       </div>
     </div>
 
-    <!-- Enemy Info -->
     @if (currentEnemy()) {
       <div class="enemy-info">
         <span class="enemy-name">{{ currentEnemy()!.name }}</span>
-        @if (enemyService.getAbilityDescription(currentEnemy()!) ) {
+        @if (enemyService.getAbilityDescription(currentEnemy()!)) {
           <span class="enemy-ability">
             {{ enemyService.getAbilityDescription(currentEnemy()!) }}
           </span>
@@ -80,12 +81,10 @@
       </div>
     }
 
-    <!-- Status Message -->
     <div class="status-msg" [class.visible]="statusMessage() !== null">
       {{ statusMessage() }}
     </div>
 
-    <!-- Damage Flash -->
     <div class="damage-flash"
          [class.visible]="damage() !== null"
          [class.negative]="(damage() ?? 0) < 0">
@@ -94,20 +93,19 @@
       }
     </div>
 
-    <!-- Card -->
-    <div class="card" [class.flipped]="flipped()" (click)="flip()">
-      <div class="card-inner">
+    <div class="card" (click)="flip()">
+      @if (!flipped()) {
         <div class="card-front">
           <p>{{ currentCard().front }}</p>
           <span class="hint">tap to reveal</span>
         </div>
+      } @else {
         <div class="card-back">
           <p>{{ currentCard().back }}</p>
         </div>
-      </div>
+      }
     </div>
 
-    <!-- Rating Buttons -->
     <div class="ratings">
       @if (flipped()) {
         <button class="btn again" (click)="rate(Rating.Again)">Again</button>
@@ -117,7 +115,6 @@
       }
     </div>
 
-    <!-- Inventory -->
     @if (inventory().length > 0) {
       <div class="inventory">
         <span class="inv-label">Inventory ({{ inventory().length }}/{{ INVENTORY_CAP }})</span>
@@ -130,6 +127,8 @@
         </div>
       </div>
     }
+
+    <button class="leave-btn" (click)="goBack()">✕ Abandon Run</button>
 
   } @else {
     <p>No cards due. Come back later!</p>

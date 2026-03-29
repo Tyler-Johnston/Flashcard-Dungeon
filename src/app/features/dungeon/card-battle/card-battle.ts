@@ -12,7 +12,7 @@ import { HpBarComponent } from '../../../shared/components/hp-bar/hp-bar';
   templateUrl: './card-battle.html',
   styleUrl: './card-battle.scss',
 })
-export class CardBattleComponent implements OnInit {
+export class CardBattle implements OnInit {
   private idb = inject(IndexedDbService);
   private fsrs = inject(FsrsService);
   protected enemyService = inject(EnemyService);
@@ -21,23 +21,18 @@ export class CardBattleComponent implements OnInit {
   readonly Rating = Rating;
   readonly INVENTORY_CAP = 5;
 
-  // Run state
   run = signal<RunState | null>(null);
   queue = signal<Card[]>([]);
   currentIndex = signal(0);
 
-  // Battle UI state
   flipped = signal(false);
   damage = signal<number | null>(null);
   damageTarget = signal<'enemy' | 'player' | null>(null);
   runOver = signal(false);
   victory = signal(false);
 
-  // Loot state
   lootOffer = signal<Item[] | null>(null);
   pendingNextRoom = signal(false);
-
-  // Item use feedback
   statusMessage = signal<string | null>(null);
 
   currentCard = computed(() => this.queue()[this.currentIndex()]);
@@ -55,7 +50,6 @@ export class CardBattleComponent implements OnInit {
       return;
     }
 
-    // Apply shuffle ability on entry
     let cards = await this.idb.getDueCards(run.deckId);
     if (run.currentEnemy.ability === 'shuffle') {
       cards = this.shuffleArray(cards);
@@ -78,7 +72,6 @@ export class CardBattleComponent implements OnInit {
     let effectiveRating = rating;
     const enemy = run.currentEnemy;
 
-    // Apply enemy abilities that modify ratings
     if (enemy.ability === 'suppress-crit' && rating === Rating.Easy) {
       effectiveRating = Rating.Good;
       this.showStatus('Dark Mage suppresses your crit!');
@@ -88,11 +81,9 @@ export class CardBattleComponent implements OnInit {
       this.showStatus('Mimic shows no mercy — Hard treated as Again!');
     }
 
-    // Update FSRS
     const updated = this.fsrs.grade(card, effectiveRating);
     await this.idb.saveCard(updated);
 
-    // Calculate damage
     let playerDmg = 0;
     let enemyDmg = 0;
     let newConsecutiveAgain = run.consecutiveAgain;
@@ -103,8 +94,6 @@ export class CardBattleComponent implements OnInit {
     } else if (effectiveRating === Rating.Hard) {
       playerDmg = Math.floor(enemy.atk / 2);
       newConsecutiveAgain = 0;
-
-      // Troll heals on Hard
       if (enemy.ability === 'troll-heal') {
         const newEnemyHp = Math.min(enemy.maxHp, run.enemyHp + 15);
         await this.updateRun({ enemyHp: newEnemyHp, consecutiveAgain: 0 });
@@ -118,7 +107,6 @@ export class CardBattleComponent implements OnInit {
       newConsecutiveAgain = 0;
     }
 
-    // Apply crit active effect
     if (effectiveRating === Rating.Good && run.activeEffects.includes('crit')) {
       enemyDmg = 60;
       const newEffects = run.activeEffects.filter(e => e !== 'crit');
@@ -126,7 +114,6 @@ export class CardBattleComponent implements OnInit {
       this.showStatus('Crit Scroll activates!');
     }
 
-    // Lich curse — skip next card after 2x Again
     let skipNext = false;
     if (enemy.ability === 'curse' && newConsecutiveAgain >= 2) {
       skipNext = true;
@@ -134,7 +121,6 @@ export class CardBattleComponent implements OnInit {
       this.showStatus('Lich curses you — next card skipped!');
     }
 
-    // Check shield
     let newInventory = [...run.inventory];
     if (playerDmg > 0) {
       const shieldIdx = newInventory.findIndex(i => i.type === 'shield');
@@ -145,11 +131,9 @@ export class CardBattleComponent implements OnInit {
       }
     }
 
-    // Apply damage
     const newPlayerHp = Math.max(0, run.hp - playerDmg);
     let newEnemyHp = Math.max(0, run.enemyHp - enemyDmg);
 
-    // Flash damage indicator
     if (playerDmg > 0) {
       this.damage.set(-playerDmg);
       this.damageTarget.set('player');
@@ -159,26 +143,18 @@ export class CardBattleComponent implements OnInit {
     }
     setTimeout(() => { this.damage.set(null); this.damageTarget.set(null); }, 800);
 
-    // Skeleton revive
-    let skeletonRevived = run.activeEffects.includes('revive-used');
+    const skeletonRevived = run.activeEffects.includes('revive-used');
     if (enemy.ability === 'revive' && newEnemyHp <= 0 && !skeletonRevived) {
       newEnemyHp = 20;
-      skeletonRevived = true;
       await this.updateRun({ activeEffects: [...run.activeEffects, 'revive-used'] });
       this.showStatus('Skeleton revives at 20 HP!');
     }
 
-    // Dragon enrage
-    let currentAtk = enemy.atk;
     if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !run.activeEffects.includes('enraged')) {
       await this.updateRun({ activeEffects: [...run.activeEffects, 'enraged'] });
       this.showStatus('Dragon enrages — ATK doubled!');
     }
-    if (run.activeEffects.includes('enraged')) {
-      currentAtk = enemy.atk * 2;
-    }
 
-    // Save updated run
     await this.updateRun({
       hp: newPlayerHp,
       enemyHp: newEnemyHp,
@@ -186,31 +162,25 @@ export class CardBattleComponent implements OnInit {
       consecutiveAgain: newConsecutiveAgain,
     });
 
-    // Advance card
     let nextIndex = this.currentIndex() + 1;
     if (skipNext) nextIndex++;
-    this.currentIndex.set(nextIndex);
     this.flipped.set(false);
+    this.currentIndex.set(nextIndex);
 
-    // Check player death
     if (newPlayerHp <= 0) {
       this.runOver.set(true);
       return;
     }
 
-    // Check enemy defeated
     if (newEnemyHp <= 0) {
       await this.handleEnemyDefeated();
       return;
     }
 
-    // Check out of cards
     if (!this.hasCards()) {
       this.runOver.set(true);
     }
   }
-
-  // --- Item Usage ---
 
   async useItem(item: Item) {
     const run = this.run();
@@ -225,8 +195,8 @@ export class CardBattleComponent implements OnInit {
         this.showStatus('Potion restores 30 HP!');
         break;
       case 'scroll':
-        this.currentIndex.update(i => i + 1);
         this.flipped.set(false);
+        this.currentIndex.update(i => i + 1);
         this.showStatus('Scroll skips the current card!');
         break;
       case 'shield':
@@ -241,8 +211,6 @@ export class CardBattleComponent implements OnInit {
     updates.inventory = newInventory;
     await this.updateRun(updates);
   }
-
-  // --- Loot ---
 
   async handleEnemyDefeated() {
     const run = this.run();
@@ -260,12 +228,7 @@ export class CardBattleComponent implements OnInit {
   async takeLoot(item: Item) {
     const run = this.run();
     if (!run) return;
-
-    if (run.inventory.length >= this.INVENTORY_CAP) {
-      // At cap — don't auto-take, let discard flow handle it
-      return;
-    }
-
+    if (run.inventory.length >= this.INVENTORY_CAP) return;
     await this.updateRun({ inventory: [...run.inventory, item] });
     this.lootOffer.set(null);
     await this.advanceRoom();
@@ -274,11 +237,7 @@ export class CardBattleComponent implements OnInit {
   async discardAndTake(discard: Item, take: Item) {
     const run = this.run();
     if (!run) return;
-
-    const newInventory = run.inventory
-      .filter(i => i.id !== discard.id)
-      .concat(take);
-
+    const newInventory = run.inventory.filter(i => i.id !== discard.id).concat(take);
     await this.updateRun({ inventory: newInventory });
     this.lootOffer.set(null);
     await this.advanceRoom();
@@ -296,7 +255,6 @@ export class CardBattleComponent implements OnInit {
     const nextRoom = run.currentRoom + 1;
 
     if (nextRoom > run.totalRooms + 1) {
-      // Run complete — all rooms and boss done
       this.victory.set(true);
       this.runOver.set(true);
       await this.idb.clearRunState();
@@ -315,7 +273,6 @@ export class CardBattleComponent implements OnInit {
       cardQueue: cards.map(c => c.id),
     });
 
-    // Reset battle UI
     this.queue.set(cards);
     this.currentIndex.set(0);
     this.flipped.set(false);
@@ -326,8 +283,6 @@ export class CardBattleComponent implements OnInit {
       this.showStatus(`${nextEnemy.name} shuffles your cards!`);
     }
   }
-
-  // --- Helpers ---
 
   private async updateRun(partial: Partial<RunState>) {
     const run = this.run();

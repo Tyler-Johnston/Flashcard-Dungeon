@@ -2,9 +2,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 3rem;
   gap: 1.5rem;
-  padding: 2rem;
   min-height: 100vh;
   color: #eee;
 }
@@ -14,7 +14,7 @@
   align-items: center;
   gap: 1rem;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
 
   .hud-section { flex: 1; }
 }
@@ -32,8 +32,8 @@
   align-items: center;
   gap: 4px;
 
-  .enemy-name { font-size: 1.3rem; font-weight: bold; }
-  .enemy-ability { font-size: 0.8rem; opacity: 0.5; font-style: italic; }
+  .enemy-name { font-size: 1.6rem; font-weight: bold; }
+  .enemy-ability { font-size: 0.85rem; opacity: 0.5; font-style: italic; }
 }
 
 .status-msg {
@@ -41,7 +41,6 @@
   font-size: 0.9rem;
   color: #f39c12;
   opacity: 0;
-  transition: opacity 0.2s;
   text-align: center;
 
   &.visible { opacity: 1; }
@@ -53,48 +52,32 @@
   font-weight: bold;
   color: #e74c3c;
   text-align: center;
+  opacity: 0;
 
-  &.visible { animation: pop 0.8s ease-out forwards; }
+  &.visible { opacity: 1; }
   &.negative { color: #e67e22; }
 }
 
-@keyframes pop {
-  0%   { transform: scale(1.4); opacity: 1; }
-  100% { transform: scale(1);   opacity: 0; }
-}
-
 .card {
-  width: 360px;
-  height: 220px;
+  width: 520px;
+  height: 300px;
   cursor: pointer;
-  perspective: 1000px;
-
-  &.flipped .card-inner { transform: rotateY(180deg); }
-}
-
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.5s;
-  transform-style: preserve-3d;
+  border-radius: 12px;
 }
 
 .card-front,
 .card-back {
-  position: absolute;
   width: 100%;
   height: 100%;
-  backface-visibility: hidden;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 2rem;
   text-align: center;
 
-  p { font-size: 1.4rem; margin: 0; }
+  p { font-size: 1.8rem; margin: 0; }
 }
 
 .card-front {
@@ -107,34 +90,49 @@
 .card-back {
   background: #0f3460;
   border: 2px solid #533483;
-  transform: rotateY(180deg);
 }
 
 .ratings {
   display: flex;
   gap: 1rem;
-  min-height: 48px;
+  min-height: 52px;
 }
 
 .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.75rem;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.1s;
 
-  &:hover { transform: scale(1.05); }
+  &:hover { opacity: 0.85; }
   &.again  { background: #c0392b; color: white; }
   &.hard   { background: #e67e22; color: white; }
   &.good   { background: #27ae60; color: white; }
   &.easy   { background: #8e44ad; color: white; }
 }
 
+.leave-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.3);
+  font-size: 0.8rem;
+  font-weight: normal;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+
+  &:hover {
+    border-color: #c0392b;
+    color: #c0392b;
+  }
+}
+
 .inventory {
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
 
   .inv-label {
     font-size: 0.75rem;
@@ -154,7 +152,6 @@
   color: #eee;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s;
 
   &:hover { background: rgba(255,255,255,0.15); }
 }
@@ -165,10 +162,10 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  margin-top: 4rem;
 
   h2   { font-size: 2.5rem; margin: 0; }
   p    { opacity: 0.7; margin: 0; }
-  .sub { font-size: 0.85rem; max-width: 360px; }
 }
 
 .run-over-actions {
@@ -182,8 +179,9 @@
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  max-width: 600px;
+  max-width: 700px;
   width: 100%;
+  margin-top: 2rem;
 
   h2 { font-size: 2rem; }
   .loot-subtitle { opacity: 0.6; }
@@ -201,7 +199,7 @@
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
   padding: 1.25rem;
-  width: 160px;
+  width: 180px;
   display: flex;
   flex-direction: column;
   gap: 8px;
