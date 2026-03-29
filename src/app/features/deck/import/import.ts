@@ -126,6 +126,10 @@ export class ImportComponent {
     ].filter(s => s.pct > 0);
   }
 
+  newDeck() {
+    this.router.navigate(['/editor']);
+  }
+
   async onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];

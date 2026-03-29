@@ -97,6 +97,16 @@ export class JournalComponent implements OnInit {
     this.cards.set(cards);
   }
 
+  editDeck() {
+  const id = this.selectedDeckId();
+  if (id) this.router.navigate(['/editor'], { queryParams: { deckId: id } });
+  }
+
+  editCard(card: Card) {
+    const id = this.selectedDeckId();
+    if (id) this.router.navigate(['/editor'], { queryParams: { deckId: id, cardId: card.id } });
+  }
+
   setTag(tag: string) { this.selectedTag.set(tag); }
   setSearch(value: string) { this.search.set(value); }
 

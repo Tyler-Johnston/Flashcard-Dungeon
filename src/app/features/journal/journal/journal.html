@@ -3,6 +3,7 @@
   <div class="journal-header">
     <button class="back-btn" (click)="goBack()">← Back</button>
     <h1 class="journal-title">Journal</h1>
+    <button class="edit-deck-btn" (click)="editDeck()">✎ Edit Deck</button>
   </div>
 
   @if (decks().length === 0) {
@@ -23,9 +24,7 @@
     @if (progressSegments().length > 0) {
       <div class="progress-bar">
         @for (seg of progressSegments(); track seg.state) {
-          <div
-            class="progress-seg state-{{ seg.state }}"
-            [style.width.%]="seg.pct">
+          <div class="progress-seg state-{{ seg.state }}" [style.width.%]="seg.pct">
             <span class="progress-tooltip">
               {{ STATE_LABELS[seg.state] }} — {{ seg.count }} cards ({{ seg.pct.toFixed(0) }}%)
             </span>
@@ -86,6 +85,7 @@
                     <span class="stat-interval">{{ formatInterval(card) }}</span>
                     <span class="stat-reps">{{ card.reps }}×</span>
                   </div>
+                  <button class="card-edit-btn" (click)="editCard(card)" title="Edit card">✎</button>
                 </div>
               }
             </div>

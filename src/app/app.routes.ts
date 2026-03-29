@@ -3,23 +3,8 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'dungeon',
+    redirectTo: 'deck',
     pathMatch: 'full',
-  },
-  {
-    path: 'dungeon',
-    loadChildren: () =>
-      import('./features/dungeon/dungeon-module').then(m => m.DungeonModule),
-  },
-  {
-    path: 'boss',
-    loadChildren: () =>
-      import('./features/boss/boss-module').then(m => m.BossModule),
-  },
-  {
-    path: 'journal',
-    loadChildren: () =>
-      import('./features/journal/journal-module').then(m => m.JournalModule),
   },
   {
     path: 'deck',
@@ -27,13 +12,27 @@ export const routes: Routes = [
       import('./features/deck/deck-module').then(m => m.DeckModule),
   },
   {
-    path: '**',
-    redirectTo: 'dungeon',
+    path: 'dungeon',
+    loadChildren: () =>
+      import('./features/dungeon/dungeon-module').then(m => m.DungeonModule),
   },
-  { path: '', redirectTo: 'deck', pathMatch: 'full' },
   {
-  path: 'journal',
-  loadChildren: () =>
-    import('./features/journal/journal-module').then(m => m.JournalModule),
+    path: 'journal',
+    loadChildren: () =>
+      import('./features/journal/journal-module').then(m => m.JournalModule),
+  },
+  {
+    path: 'editor',
+    loadChildren: () =>
+      import('./features/editor/editor-module').then(m => m.EditorModule),
+  },
+  {
+    path: 'boss',
+    loadChildren: () =>
+      import('./features/boss/boss-module').then(m => m.BossModule),
+  },
+  {
+    path: '**',
+    redirectTo: 'deck',
   },
 ];

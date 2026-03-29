@@ -14,6 +14,9 @@
     </label>
   </div>
 
+  <!-- New Deck -->
+  <button class="new-deck-btn" (click)="newDeck()">+ New Deck</button>
+
   <!-- Status Message -->
   @if (status() !== 'idle') {
     <div class="message"
@@ -32,7 +35,6 @@
 
       @for (group of deckGroups(); track group.label) {
         <div class="deck-group">
-
           <button class="group-header" (click)="toggleGroup(group.label)">
             <span class="group-label">{{ group.label }}</span>
             <span class="group-range">{{ group.range }}</span>
@@ -47,7 +49,6 @@
                   <span class="deck-name">{{ stats.deck.name }}</span>
                   <span class="deck-completion">{{ stats.completion }}%</span>
                 </div>
-
                 <div class="deck-progress-bar">
                   @for (seg of progressSegments(stats); track seg.state) {
                     <div class="progress-seg state-{{ seg.state }}"
@@ -55,13 +56,11 @@
                     </div>
                   }
                 </div>
-
                 <div class="deck-meta">
                   <span class="meta-item">{{ stats.totalCards }} cards</span>
                   <span class="meta-item">{{ stats.counts[2] }} in review</span>
                   <span class="meta-item">{{ stats.counts[0] }} new</span>
                 </div>
-
                 <div class="deck-actions">
                   <button class="btn play"    (click)="startRun(stats)">▶ Play</button>
                   <button class="btn journal" (click)="openJournal(stats)">≡ Journal</button>
@@ -70,7 +69,6 @@
               </div>
             }
           }
-
         </div>
       }
     </div>

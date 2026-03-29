@@ -1,0 +1,134 @@
+<div class="editor">
+
+  <div class="editor-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h1 class="editor-title">{{ isNewDeck() ? 'New Deck' : 'Edit Deck' }}</h1>
+  </div>
+
+  <!-- Status flash -->
+  <div class="status-flash" [class.visible]="statusMsg() !== null">
+    {{ statusMsg() }}
+  </div>
+
+  <!-- Deck name -->
+  <div class="deck-name-row">
+    <input
+      class="deck-name-input"
+      type="text"
+      placeholder="Deck name…"
+      [value]="deckName()"
+      (input)="deckName.set($any($event.target).value)"
+    />
+    <button class="btn-save-deck" (click)="saveDeckName()">
+      {{ isNewDeck() ? 'Create Deck' : 'Save Name' }}
+    </button>
+  </div>
+
+  @if (deck()) {
+
+    <!-- Card count -->
+    <div class="section-header">
+      <span class="section-label">Cards — {{ cardCount() }}</span>
+      <button class="add-btn" (click)="addingCard.set(true)" [disabled]="addingCard()">
+        + Add Card
+      </button>
+    </div>
+
+    <!-- Add card form -->
+    @if (addingCard()) {
+      <div class="card-form new-card-form">
+        <textarea
+          class="card-field"
+          placeholder="Front…"
+          rows="2"
+          [value]="newFront()"
+          (input)="newFront.set($any($event.target).value)">
+        </textarea>
+        <textarea
+          class="card-field"
+          placeholder="Back…"
+          rows="2"
+          [value]="newBack()"
+          (input)="newBack.set($any($event.target).value)">
+        </textarea>
+        <div class="form-actions">
+          <button class="btn-confirm" (click)="addCard()"
+                  [disabled]="!newFront().trim() || !newBack().trim()">
+            Add
+          </button>
+          <button class="btn-cancel" (click)="addingCard.set(false)">Cancel</button>
+        </div>
+      </div>
+    }
+
+    <!-- Card list -->
+    <div class="card-list">
+      @for (card of cards(); track card.id) {
+        <div class="editor-card" [class.is-editing]="editingCardId() === card.id"
+                                 [class.is-focused]="focusCardId() === card.id">
+
+          @if (editingCardId() === card.id) {
+
+            <!-- Edit mode -->
+            <div class="card-form">
+              <textarea
+                class="card-field"
+                rows="2"
+                [value]="editFront()"
+                (input)="editFront.set($any($event.target).value)">
+              </textarea>
+              <textarea
+                class="card-field"
+                rows="2"
+                [value]="editBack()"
+                (input)="editBack.set($any($event.target).value)">
+              </textarea>
+              <div class="form-actions">
+                <button class="btn-confirm" (click)="saveEdit()"
+                        [disabled]="!editFront().trim() || !editBack().trim()">
+                  Save
+                </button>
+                <button class="btn-cancel" (click)="cancelEdit()">Cancel</button>
+              </div>
+            </div>
+
+          } @else if (confirmDeleteId() === card.id) {
+
+            <!-- Delete confirm -->
+            <div class="delete-confirm">
+              <span class="delete-msg">Delete "{{ card.front }}"?</span>
+              <div class="form-actions">
+                <button class="btn-danger" (click)="confirmDelete()">Delete</button>
+                <button class="btn-cancel" (click)="cancelDelete()">Cancel</button>
+              </div>
+            </div>
+
+          } @else {
+
+            <!-- View mode -->
+            <div class="card-view" (click)="startEdit(card)">
+              <div class="card-body">
+                <span class="card-front">{{ card.front }}</span>
+                <span class="card-back">{{ card.back }}</span>
+              </div>
+              <div class="card-row-actions">
+                <button class="row-btn edit-btn" (click)="startEdit(card); $event.stopPropagation()">✎</button>
+                <button class="row-btn delete-btn" (click)="requestDelete(card.id); $event.stopPropagation()">✕</button>
+              </div>
+            </div>
+
+          }
+
+        </div>
+      }
+    </div>
+
+    @if (cards().length === 0 && !addingCard()) {
+      <p class="empty-state">No cards yet. Add your first one above.</p>
+    }
+
+  } @else if (!isNewDeck()) {
+    <p class="empty-state">Deck not found.</p>
+  }
+
+</div>
