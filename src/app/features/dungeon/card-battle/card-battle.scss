@@ -1,0 +1,131 @@
+.battle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  min-height: 100vh;
+  color: #eee;
+}
+
+.hud {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+// Always takes up space — visibility toggled in template
+.damage-flash {
+  height: 2.5rem;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #e74c3c;
+  text-align: center;
+
+  &.visible {
+    animation: pop 0.8s ease-out forwards;
+  }
+
+  &.negative { color: #e67e22; }
+}
+
+@keyframes pop {
+  0%   { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(1);   opacity: 0; }
+}
+
+.card {
+  width: 360px;
+  height: 220px;
+  cursor: pointer;
+  perspective: 1000px;
+
+  &.flipped .card-inner {
+    transform: rotateY(180deg);
+  }
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+
+  p { font-size: 1.4rem; margin: 0; }
+}
+
+.card-front {
+  background: #16213e;
+  border: 2px solid #0f3460;
+
+  .hint {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    opacity: 0.4;
+  }
+}
+
+.card-back {
+  background: #0f3460;
+  border: 2px solid #533483;
+  transform: rotateY(180deg);
+}
+
+// Always reserve space for rating buttons — no layout shift
+.ratings {
+  display: flex;
+  gap: 1rem;
+  min-height: 48px;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.1s;
+
+  &:hover { transform: scale(1.05); }
+  &.again { background: #c0392b; color: white; }
+  &.hard  { background: #e67e22; color: white; }
+  &.good  { background: #27ae60; color: white; }
+  &.easy  { background: #8e44ad; color: white; }
+}
+
+.run-over {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+
+  h2   { font-size: 2.5rem; margin: 0; }
+  p    { opacity: 0.7; margin: 0; }
+  .sub { font-size: 0.85rem; max-width: 360px; }
+}
+
+.run-over-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}

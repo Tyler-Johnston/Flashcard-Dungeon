@@ -1,0 +1,17 @@
+import { Component, inject, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { IndexedDbService } from './core/services/indexed-db';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  templateUrl: './app.html',
+  styleUrl: './app.scss'
+})
+export class App implements OnInit {
+  private idb = inject(IndexedDbService);
+
+  async ngOnInit() {
+    await this.idb.init();
+  }
+}

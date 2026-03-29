@@ -1,0 +1,137 @@
+import { Injectable } from '@angular/core';
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
+
+// --- Schema Types ---
+
+export interface Deck {
+  id: string;
+  name: string;
+  tags: string[];
+  createdAt: number;
+}
+
+export interface Card {
+  id: string;
+  deckId: string;
+  front: string;
+  back: string;
+  tags: string[];
+  // FSRS scheduling fields
+  due: number;
+  stability: number;
+  difficulty: number;
+  elapsedDays: number;
+  scheduledDays: number;
+  reps: number;
+  lapses: number;
+  state: 0 | 1 | 2 | 3; // New | Learning | Review | Relearning
+  lastReview: number | null;
+}
+
+export interface RunState {
+  id: 'current';
+  deckId: string;
+  hp: number;
+  maxHp: number;
+  roomsCleared: number;
+  cardQueue: string[];   // card IDs queued for this run
+  powerups: string[];
+  startedAt: number;
+}
+
+// --- IDB Schema ---
+
+interface FlashcardDungeonDB extends DBSchema {
+  decks: {
+    key: string;
+    value: Deck;
+    indexes: { 'by-name': string };
+  };
+  cards: {
+    key: string;
+    value: Card;
+    indexes: {
+      'by-deck': string;
+      'by-due': number;
+    };
+  };
+  run: {
+    key: string;
+    value: RunState;
+  };
+}
+
+@Injectable({ providedIn: 'root' })
+export class IndexedDbService {
+  private db!: IDBPDatabase<FlashcardDungeonDB>;
+
+  async init(): Promise<void> {
+    this.db = await openDB<FlashcardDungeonDB>('flashcard-dungeon', 1, {
+      upgrade(db) {
+        // Decks store
+        const deckStore = db.createObjectStore('decks', { keyPath: 'id' });
+        deckStore.createIndex('by-name', 'name');
+
+        // Cards store
+        const cardStore = db.createObjectStore('cards', { keyPath: 'id' });
+        cardStore.createIndex('by-deck', 'deckId');
+        cardStore.createIndex('by-due', 'due');
+
+        // Run store (single record: key = 'current')
+        db.createObjectStore('run', { keyPath: 'id' });
+      },
+    });
+  }
+
+  // --- Deck operations ---
+
+  async getAllDecks(): Promise<Deck[]> {
+    return this.db.getAll('decks');
+  }
+
+  async saveDeck(deck: Deck): Promise<void> {
+    await this.db.put('decks', deck);
+  }
+
+  async deleteDeck(id: string): Promise<void> {
+    await this.db.delete('decks', id);
+  }
+
+  // --- Card operations ---
+
+  async getCardsByDeck(deckId: string): Promise<Card[]> {
+    return this.db.getAllFromIndex('cards', 'by-deck', deckId);
+  }
+
+  async getDueCards(deckId: string, now = Date.now()): Promise<Card[]> {
+    const cards = await this.getCardsByDeck(deckId);
+    return cards.filter(c => c.due <= now);
+  }
+
+  async saveCard(card: Card): Promise<void> {
+    await this.db.put('cards', card);
+  }
+
+  async saveCards(cards: Card[]): Promise<void> {
+    const tx = this.db.transaction('cards', 'readwrite');
+    await Promise.all([...cards.map(c => tx.store.put(c)), tx.done]);
+  }
+
+  async deleteCard(id: string): Promise<void> {
+    await this.db.delete('cards', id);
+  }
+
+  // --- Run state operations ---
+
+  async getRunState(): Promise<RunState | undefined> {
+    return this.db.get('run', 'current');
+  }
+
+  async saveRunState(state: RunState): Promise<void> {
+    await this.db.put('run', state);
+  }
+
+  async clearRunState(): Promise<void> {
+    await this.db.delete('run', 'current');
+  }
+}

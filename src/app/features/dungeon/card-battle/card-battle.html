@@ -1,0 +1,59 @@
+<div class="battle">
+
+  @if (runOver()) {
+    <div class="run-over">
+      @if (playerHp() <= 0) {
+        <h2>💀 Defeated...</h2>
+        <p>The dungeon claims another adventurer.</p>
+      } @else {
+        <h2>⚔️ Room Cleared!</h2>
+        <p>{{ enemyHp() <= 0 ? 'Enemy defeated!' : 'All cards answered.' }}</p>
+        <p class="sub">Cards reviewed this run will be scheduled by FSRS — come back tomorrow for the next batch.</p>
+      }
+      <div class="run-over-actions">
+        <button class="btn good" (click)="playAgain()">▶ Play Another Deck</button>
+        <button class="btn hard" (click)="goBack()">← Back to Decks</button>
+      </div>
+    </div>
+
+  } @else if (currentCard()) {
+
+    <div class="hud">
+      <app-hp-bar label="Player" [current]="playerHp()" [max]="100" color="green" />
+      <app-hp-bar label="Enemy"  [current]="enemyHp()"  [max]="100" color="red" />
+    </div>
+
+    <div class="damage-flash"
+         [class.visible]="damage() !== null"
+         [class.negative]="(damage() ?? 0) < 0">
+      @if (damage() !== null) {
+        {{ damage()! > 0 ? '- ' + damage() : 'Enemy heals +' + (damage()! * -1) }}
+      }
+    </div>
+
+    <div class="card" [class.flipped]="flipped()" (click)="flip()">
+      <div class="card-inner">
+        <div class="card-front">
+          <p>{{ currentCard().front }}</p>
+          <span class="hint">tap to reveal</span>
+        </div>
+        <div class="card-back">
+          <p>{{ currentCard().back }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ratings">
+      @if (flipped()) {
+        <button class="btn again" (click)="rate(Rating.Again)">Again</button>
+        <button class="btn hard"  (click)="rate(Rating.Hard)">Hard</button>
+        <button class="btn good"  (click)="rate(Rating.Good)">Good</button>
+        <button class="btn easy"  (click)="rate(Rating.Easy)">Easy</button>
+      }
+    </div>
+
+  } @else {
+    <p>No cards due. Come back later!</p>
+  }
+
+</div>

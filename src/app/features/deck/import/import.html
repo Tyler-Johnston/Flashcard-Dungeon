@@ -1,0 +1,42 @@
+<div class="import-page">
+  <h1>Decks</h1>
+
+  <!-- File Upload -->
+  <div class="upload-zone">
+    <p>Import an Anki-format <code>.txt</code> file</p>
+    <label class="upload-btn">
+      Choose File
+      <input type="file" accept=".txt" (change)="onFileSelected($event)" hidden />
+    </label>
+  </div>
+
+  <!-- Status Message -->
+  @if (status() !== 'idle') {
+    <div class="message" [class.success]="status() === 'success'"
+                         [class.error]="status() === 'error'"
+                         [class.loading]="status() === 'loading'">
+      @if (status() === 'loading') { Importing... }
+      @else { {{ message() }} }
+    </div>
+  }
+
+  <!-- Deck List -->
+  @if (decks().length > 0) {
+    <div class="deck-list">
+      <h2>Your Decks</h2>
+      @for (deck of decks(); track deck.id) {
+        <div class="deck-card">
+          <div class="deck-info">
+            <span class="deck-name">{{ deck.name }}</span>
+          </div>
+          <div class="deck-actions">
+            <button class="btn play" (click)="startRun(deck)">▶ Play</button>
+            <button class="btn delete" (click)="deleteDeck(deck)">✕</button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="empty">No decks yet. Import a .txt file to get started.</p>
+  }
+</div>
