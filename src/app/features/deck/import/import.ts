@@ -58,7 +58,7 @@ async startRun(deck: Deck) {
     hp: 100,
     maxHp: 100,
     currentRoom: 1,
-    totalRooms: 4,
+    totalRooms: 3,
     currentEnemy: firstEnemy,
     enemyHp: firstEnemy.maxHp,
     consecutiveAgain: 0,
