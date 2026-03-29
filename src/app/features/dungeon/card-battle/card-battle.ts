@@ -136,7 +136,7 @@ export class CardBattle implements OnInit {
       enemyDmg = 60;
       const newEffects = run.activeEffects.filter(e => e !== 'crit');
       await this.updateRun({ activeEffects: newEffects });
-      this.showStatus('Crit Scroll activates!');
+      this.showStatus('Iron Sword activates!');
     }
 
     let newInventory = [...run.inventory];

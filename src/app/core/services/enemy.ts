@@ -99,7 +99,7 @@ export class EnemyService {
     },
     scroll: {
       type: 'scroll',
-      name: 'Skip Scroll',
+      name: 'Bomb',
       description: 'Skip the current card — no damage, no FSRS penalty.',
     },
     shield: {
@@ -109,11 +109,10 @@ export class EnemyService {
     },
     crit: {
       type: 'crit',
-      name: 'Crit Scroll',
+      name: 'Iron Sword',
       description: 'Your next Good answer deals Easy damage instead.',
     },
   };
-
   // --- Room Progression ---
 
   /**
