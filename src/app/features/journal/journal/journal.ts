@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { IndexedDbService, Card, Deck } from '../../../core/services/indexed-db';
 
 export const STATE_LABELS: Record<number, string> = {
@@ -30,6 +30,7 @@ export interface StateGroup {
 export class JournalComponent implements OnInit {
   private idb = inject(IndexedDbService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   readonly STATE_LABELS = STATE_LABELS;
 
@@ -83,7 +84,10 @@ export class JournalComponent implements OnInit {
   async ngOnInit() {
     const decks = await this.idb.getAllDecks();
     this.decks.set(decks);
-    if (decks.length > 0) await this.selectDeck(decks[0].id);
+    if (decks.length === 0) return;
+    const paramId = this.route.snapshot.queryParamMap.get('deckId');
+    const target = paramId && decks.find(d => d.id === paramId) ? paramId : decks[0].id;
+    await this.selectDeck(target);
   }
 
   async selectDeck(id: string) {

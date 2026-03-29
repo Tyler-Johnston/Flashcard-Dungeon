@@ -15,15 +15,23 @@ export class ImportComponent {
   private importer = inject(DeckImportService);
   private idb = inject(IndexedDbService);
   private router = inject(Router);
+  private enemyService = inject(EnemyService);
 
   decks = signal<Deck[]>([]);
   status = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
   message = signal('');
-  private enemyService = inject(EnemyService);
+
+  readonly heroSpriteUrl = (() => {
+    const keys = ['dragon'];
+    const key = keys[Math.floor(Math.random() * keys.length)];
+    const variant = Math.random() < 0.5 ? 'a' : 'b';
+    return `sprites/${key}_${variant}.png`;
+  })();
 
   async ngOnInit() {
     this.decks.set(await this.idb.getAllDecks());
   }
+  
 
   async onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -42,35 +50,38 @@ export class ImportComponent {
     }
   }
 
-async startRun(deck: Deck) {
-  const cards = await this.idb.getDueCards(deck.id);
-  if (cards.length === 0) {
-    this.message.set('No cards due for this deck right now!');
-    this.status.set('error');
-    return;
+  async startRun(deck: Deck) {
+    const cards = await this.idb.getDueCards(deck.id);
+    if (cards.length === 0) {
+      this.message.set('No cards due for this deck right now!');
+      this.status.set('error');
+      return;
+    }
+
+    const firstEnemy = this.enemyService.getEnemyForRoom(1);
+    await this.idb.saveRunState({
+      id: 'current',
+      deckId: deck.id,
+      hp: 100,
+      maxHp: 100,
+      currentRoom: 1,
+      totalRooms: 3,
+      currentEnemy: firstEnemy,
+      enemyHp: firstEnemy.maxHp,
+      consecutiveAgain: 0,
+      cardQueue: cards.map(c => c.id),
+      inventory: [],
+      activeEffects: [],
+      powerups: [],
+      startedAt: Date.now(),
+    });
+
+    this.router.navigate(['/dungeon']);
   }
 
-  const firstEnemy = this.enemyService.getEnemyForRoom(1);
-
-  await this.idb.saveRunState({
-    id: 'current',
-    deckId: deck.id,
-    hp: 100,
-    maxHp: 100,
-    currentRoom: 1,
-    totalRooms: 3,
-    currentEnemy: firstEnemy,
-    enemyHp: firstEnemy.maxHp,
-    consecutiveAgain: 0,
-    cardQueue: cards.map(c => c.id),
-    inventory: [],
-    activeEffects: [],
-    powerups: [],
-    startedAt: Date.now(),
-  });
-
-  this.router.navigate(['/dungeon']);
-}
+  openJournal(deck: Deck) {
+    this.router.navigate(['/journal'], { queryParams: { deckId: deck.id } });
+  }
 
   async deleteDeck(deck: Deck) {
     const cards = await this.idb.getCardsByDeck(deck.id);

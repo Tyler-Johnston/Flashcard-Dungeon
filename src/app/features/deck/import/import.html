@@ -1,5 +1,9 @@
 <div class="import-page">
-  <h1>Decks</h1>
+  <h1>Flashcard Dungeon</h1>
+
+  <div class="hero-frame">
+    <img [src]="heroSpriteUrl" alt="Enemy" class="hero-sprite" draggable="false" />
+  </div>
 
   <!-- File Upload -->
   <div class="upload-zone">
@@ -12,9 +16,10 @@
 
   <!-- Status Message -->
   @if (status() !== 'idle') {
-    <div class="message" [class.success]="status() === 'success'"
-                         [class.error]="status() === 'error'"
-                         [class.loading]="status() === 'loading'">
+    <div class="message"
+         [class.success]="status() === 'success'"
+         [class.error]="status() === 'error'"
+         [class.loading]="status() === 'loading'">
       @if (status() === 'loading') { Importing... }
       @else { {{ message() }} }
     </div>
@@ -30,8 +35,9 @@
             <span class="deck-name">{{ deck.name }}</span>
           </div>
           <div class="deck-actions">
-            <button class="btn play" (click)="startRun(deck)">▶ Play</button>
-            <button class="btn delete" (click)="deleteDeck(deck)">✕</button>
+            <button class="btn play"    (click)="startRun(deck)">▶ Play</button>
+            <button class="btn journal" (click)="openJournal(deck)">≡ Journal</button>
+            <button class="btn delete"  (click)="deleteDeck(deck)">✕</button>
           </div>
         </div>
       }
@@ -39,4 +45,5 @@
   } @else {
     <p class="empty">No decks yet. Import a .txt file to get started.</p>
   }
+
 </div>
