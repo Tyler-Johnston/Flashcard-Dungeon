@@ -35,6 +35,9 @@ export class CardBattle implements OnInit {
   pendingNextRoom = signal(false);
   statusMessage = signal<string | null>(null);
 
+  // Tracks Goblin Scholar's Cram stacks — resets each room in advanceRoom()
+  cramBonus = signal(0);
+
   currentCard = computed(() => this.queue()[this.currentIndex()]);
   hasCards = computed(() => this.currentIndex() < this.queue().length);
   enemyHp = computed(() => this.run()?.enemyHp ?? 0);
@@ -50,12 +53,7 @@ export class CardBattle implements OnInit {
       return;
     }
 
-    let cards = await this.idb.getDueCards(run.deckId);
-    if (run.currentEnemy.ability === 'shuffle') {
-      cards = this.shuffleArray(cards);
-      this.showStatus(`${run.currentEnemy.name} shuffles your cards!`);
-    }
-
+    const cards = await this.idb.getDueCards(run.deckId);
     this.queue.set(cards);
     this.run.set(run);
   }
@@ -86,25 +84,35 @@ export class CardBattle implements OnInit {
 
     let playerDmg = 0;
     let enemyDmg = 0;
-    let newConsecutiveAgain = run.consecutiveAgain;
 
     if (effectiveRating === Rating.Again) {
-      playerDmg = enemy.atk;
-      newConsecutiveAgain++;
+      // Cram: Goblin Scholar gains +3 ATK per Again, stacking for this fight
+      if (enemy.ability === 'cram') {
+        this.cramBonus.update(b => b + 3);
+        this.showStatus(`Goblin Scholar studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
+      }
+
+      // Soul Drain: replaces normal ATK damage — each Again costs 5 max HP permanently
+      if (enemy.ability === 'soul-drain') {
+        const newMaxHp = Math.max(0, run.maxHp - 5);
+        const newHp = Math.min(run.hp, newMaxHp);
+        await this.updateRun({ maxHp: newMaxHp, hp: newHp });
+        this.showStatus(`Lich drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
+        playerDmg = 0; // drain IS the punishment, no extra ATK hit
+      } else {
+        playerDmg = enemy.atk + this.cramBonus();
+      }
     } else if (effectiveRating === Rating.Hard) {
       playerDmg = Math.floor(enemy.atk / 2);
-      newConsecutiveAgain = 0;
       if (enemy.ability === 'troll-heal') {
         const newEnemyHp = Math.min(enemy.maxHp, run.enemyHp + 15);
-        await this.updateRun({ enemyHp: newEnemyHp, consecutiveAgain: 0 });
+        await this.updateRun({ enemyHp: newEnemyHp });
         this.showStatus('Troll heals 15 HP!');
       }
     } else if (effectiveRating === Rating.Good) {
       enemyDmg = 25;
-      newConsecutiveAgain = 0;
     } else if (effectiveRating === Rating.Easy) {
       enemyDmg = 60;
-      newConsecutiveAgain = 0;
     }
 
     if (effectiveRating === Rating.Good && run.activeEffects.includes('crit')) {
@@ -112,13 +120,6 @@ export class CardBattle implements OnInit {
       const newEffects = run.activeEffects.filter(e => e !== 'crit');
       await this.updateRun({ activeEffects: newEffects });
       this.showStatus('Crit Scroll activates!');
-    }
-
-    let skipNext = false;
-    if (enemy.ability === 'curse' && newConsecutiveAgain >= 2) {
-      skipNext = true;
-      newConsecutiveAgain = 0;
-      this.showStatus('Lich curses you — next card skipped!');
     }
 
     let newInventory = [...run.inventory];
@@ -131,8 +132,10 @@ export class CardBattle implements OnInit {
       }
     }
 
-    const newPlayerHp = Math.max(0, run.hp - playerDmg);
-    let newEnemyHp = Math.max(0, run.enemyHp - enemyDmg);
+    // Re-read run after possible soul-drain update above
+    const currentRun = this.run()!;
+    const newPlayerHp = Math.max(0, currentRun.hp - playerDmg);
+    let newEnemyHp = Math.max(0, currentRun.enemyHp - enemyDmg);
 
     if (playerDmg > 0) {
       this.damage.set(-playerDmg);
@@ -143,15 +146,15 @@ export class CardBattle implements OnInit {
     }
     setTimeout(() => { this.damage.set(null); this.damageTarget.set(null); }, 800);
 
-    const skeletonRevived = run.activeEffects.includes('revive-used');
+    const skeletonRevived = currentRun.activeEffects.includes('revive-used');
     if (enemy.ability === 'revive' && newEnemyHp <= 0 && !skeletonRevived) {
       newEnemyHp = 20;
-      await this.updateRun({ activeEffects: [...run.activeEffects, 'revive-used'] });
+      await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'revive-used'] });
       this.showStatus('Skeleton revives at 20 HP!');
     }
 
-    if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !run.activeEffects.includes('enraged')) {
-      await this.updateRun({ activeEffects: [...run.activeEffects, 'enraged'] });
+    if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !currentRun.activeEffects.includes('enraged')) {
+      await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'enraged'] });
       this.showStatus('Dragon enrages — ATK doubled!');
     }
 
@@ -159,13 +162,10 @@ export class CardBattle implements OnInit {
       hp: newPlayerHp,
       enemyHp: newEnemyHp,
       inventory: newInventory,
-      consecutiveAgain: newConsecutiveAgain,
     });
 
-    let nextIndex = this.currentIndex() + 1;
-    if (skipNext) nextIndex++;
     this.flipped.set(false);
-    this.currentIndex.set(nextIndex);
+    this.currentIndex.update(i => i + 1);
 
     if (newPlayerHp <= 0) {
       this.runOver.set(true);
@@ -264,6 +264,9 @@ export class CardBattle implements OnInit {
     const nextEnemy = this.enemyService.getEnemyForRoom(nextRoom);
     const cards = await this.idb.getDueCards(run.deckId);
 
+    // Reset per-room transient state
+    this.cramBonus.set(0);
+
     await this.updateRun({
       currentRoom: nextRoom,
       currentEnemy: nextEnemy,
@@ -277,11 +280,6 @@ export class CardBattle implements OnInit {
     this.currentIndex.set(0);
     this.flipped.set(false);
     this.pendingNextRoom.set(false);
-
-    if (nextEnemy.ability === 'shuffle') {
-      this.queue.set(this.shuffleArray(cards));
-      this.showStatus(`${nextEnemy.name} shuffles your cards!`);
-    }
   }
 
   private async updateRun(partial: Partial<RunState>) {
@@ -290,15 +288,6 @@ export class CardBattle implements OnInit {
     const updated = { ...run, ...partial };
     this.run.set(updated);
     await this.idb.saveRunState(updated);
-  }
-
-  private shuffleArray<T>(arr: T[]): T[] {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
   }
 
   private showStatus(msg: string) {

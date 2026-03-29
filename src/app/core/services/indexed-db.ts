@@ -9,11 +9,11 @@ export type ItemType = 'potion' | 'scroll' | 'shield' | 'crit';
 
 export type EnemyAbility =
   | 'none'
-  | 'shuffle'       // Goblin Scholar — shuffles card queue
+  | 'cram'          // Goblin Scholar — gains +3 ATK per Again
   | 'revive'        // Skeleton — revives once at 20 HP
   | 'suppress-crit' // Dark Mage — Easy deals Good damage only
   | 'troll-heal'    // Troll — heals when player rates Hard
-  | 'curse'         // Lich — 2x Again in a row skips next card
+  | 'soul-drain'    // Lich — each Again reduces player max HP by 5
   | 'no-mercy'      // Mimic — Hard treated same as Again
   | 'enrage';       // Dragon — doubles ATK at 50% HP
 
@@ -69,7 +69,7 @@ export interface RunState {
   totalRooms: number;     // always 3 before boss
   currentEnemy: Enemy;
   enemyHp: number;
-  consecutiveAgain: number; // tracks Lich curse
+  consecutiveAgain: number;
   cardQueue: string[];
   inventory: Item[];
   activeEffects: string[];

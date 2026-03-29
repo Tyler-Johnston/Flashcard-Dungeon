@@ -22,7 +22,7 @@ export class EnemyService {
       tier: 1,
       maxHp: 80,
       atk: 12,
-      ability: 'shuffle',
+      ability: 'cram',
       lootTable: ['scroll', 'potion'],
     },
     {
@@ -58,7 +58,7 @@ export class EnemyService {
       tier: 3,
       maxHp: 120,
       atk: 22,
-      ability: 'curse',
+      ability: 'soul-drain',
       lootTable: ['scroll', 'crit', 'shield'],
     },
     {
@@ -184,11 +184,11 @@ export class EnemyService {
   getAbilityDescription(enemy: Enemy): string {
     const map: Record<string, string> = {
       none: '',
-      shuffle: 'Shuffles your card queue on entry.',
+      cram: 'Gains +3 ATK each time you rate Again.',
       revive: 'Revives once at 20 HP when defeated.',
       'suppress-crit': 'Easy answers only deal Good damage.',
       'troll-heal': 'Heals 15 HP whenever you rate Hard.',
-      curse: '2× Again in a row — next card is skipped.',
+      'soul-drain': 'Each Again permanently reduces your max HP by 5.',
       'no-mercy': 'Hard is treated the same as Again.',
       enrage: 'Doubles ATK when below 50% HP.',
     };
