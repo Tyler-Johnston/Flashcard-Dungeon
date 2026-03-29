@@ -71,27 +71,40 @@
     </div>
 
     @if (currentEnemy()) {
-      <div class="enemy-info">
-        <span class="enemy-name">{{ currentEnemy()!.name }}</span>
-        @if (enemyService.getAbilityDescription(currentEnemy()!)) {
-          <span class="enemy-ability">
-            {{ enemyService.getAbilityDescription(currentEnemy()!) }}
-          </span>
-        }
+      <div class="encounter-row">
+
+        <div class="enemy-frame">
+          @if (spriteUrl()) {
+            <img
+              [src]="spriteUrl()!"
+              [alt]="currentEnemy()!.name"
+              class="enemy-sprite"
+              draggable="false"
+            />
+          }
+        </div>
+
+        <div class="encounter-details">
+          <span class="enemy-name">{{ currentEnemy()!.name }}</span>
+          @if (enemyService.getAbilityDescription(currentEnemy()!)) {
+            <span class="enemy-ability">
+              {{ enemyService.getAbilityDescription(currentEnemy()!) }}
+            </span>
+          }
+          <div class="status-msg" [class.visible]="statusMessage() !== null">
+            {{ statusMessage() }}
+          </div>
+          <div class="damage-flash"
+               [class.visible]="damage() !== null"
+               [class.negative]="(damage() ?? 0) < 0">
+            @if (damage() !== null) {
+              {{ damage()! > 0 ? 'Enemy -' + damage() : 'Player -' + (damage()! * -1) }}
+            }
+          </div>
+        </div>
+
       </div>
     }
-
-    <div class="status-msg" [class.visible]="statusMessage() !== null">
-      {{ statusMessage() }}
-    </div>
-
-    <div class="damage-flash"
-         [class.visible]="damage() !== null"
-         [class.negative]="(damage() ?? 0) < 0">
-      @if (damage() !== null) {
-        {{ damage()! > 0 ? 'Enemy -' + damage() : 'Player -' + (damage()! * -1) }}
-      }
-    </div>
 
     <div class="card" (click)="flip()">
       @if (!flipped()) {

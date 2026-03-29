@@ -36,7 +36,6 @@
   color: var(--text-dim);
   white-space: nowrap;
 
-  // Amber pip row for room progress
   &::before {
     content: '';
     display: block;
@@ -46,45 +45,78 @@
   }
 }
 
-// ─── Enemy Info ───────────────────────────────────────────────────────────────
+// ─── Encounter Row ────────────────────────────────────────────────────────────
+// Centered, sprite left, enemy info right.
 
-.enemy-info {
+.encounter-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.enemy-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: clamp(100px, 22vw, 148px);
+  height: clamp(100px, 22vw, 148px);
+  background: var(--surface);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 0 18px 2px rgba(92, 61, 30, 0.3),
+    inset 0 0 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.enemy-sprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.encounter-details {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  text-align: center;
-  padding: clamp(0.1rem, 1vw, 0.35rem) 0;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .enemy-name {
   font-family: var(--font-title);
-  font-size: clamp(1rem, 4.5vw, 1.55rem);
+  font-size: clamp(1.1rem, 4.5vw, 1.7rem);
   font-weight: 700;
   color: var(--text);
   letter-spacing: 0.04em;
-  // Subtle ember glow on the boss name
   text-shadow: 0 0 20px rgba(232, 131, 58, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .enemy-ability {
   font-family: var(--font-card);
   font-style: italic;
-  font-size: clamp(0.72rem, 2.2vw, 0.85rem);
+  font-size: clamp(0.72rem, 2vw, 0.85rem);
   color: var(--text-dim);
-  max-width: 44ch;
   line-height: 1.4;
 }
 
 // ─── Status Messages ─────────────────────────────────────────────────────────
 
 .status-msg {
-  text-align: center;
   font-family: var(--font-ui);
-  font-size: clamp(0.68rem, 2.2vw, 0.82rem);
+  font-size: clamp(0.65rem, 2vw, 0.78rem);
   letter-spacing: 0.06em;
   color: var(--ember);
-  min-height: 1.4em;
+  min-height: 1.2em;
   opacity: 0;
   transform: translateY(-2px);
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -96,12 +128,11 @@
 }
 
 .damage-flash {
-  text-align: center;
   font-family: var(--font-ui);
-  font-size: clamp(0.78rem, 2.5vw, 0.92rem);
+  font-size: clamp(0.75rem, 2.2vw, 0.88rem);
   font-weight: 600;
   letter-spacing: 0.08em;
-  min-height: 1.4em;
+  min-height: 1.2em;
   opacity: 0;
   transition: opacity 0.15s ease;
   color: var(--good);
@@ -128,7 +159,6 @@
   overflow: hidden;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 
-  // Stone crack effect — top-left corner decorative line
   &::before {
     content: '';
     position: absolute;

@@ -10,6 +10,7 @@ export class EnemyService {
     {
       id: 'slime',
       name: 'Slime',
+      spriteKey: 'slime',
       tier: 1,
       maxHp: 60,
       atk: 8,
@@ -19,6 +20,7 @@ export class EnemyService {
     {
       id: 'goblin-scholar',
       name: 'Goblin Scholar',
+      spriteKey: 'goblin-scholar',
       tier: 1,
       maxHp: 80,
       atk: 12,
@@ -28,6 +30,7 @@ export class EnemyService {
     {
       id: 'skeleton',
       name: 'Skeleton',
+      spriteKey: 'skeleton',
       tier: 1,
       maxHp: 100,
       atk: 15,
@@ -37,6 +40,7 @@ export class EnemyService {
     {
       id: 'dark-mage',
       name: 'Dark Mage',
+      spriteKey: 'dark-mage',
       tier: 2,
       maxHp: 70,
       atk: 20,
@@ -46,6 +50,7 @@ export class EnemyService {
     {
       id: 'troll',
       name: 'Troll',
+      spriteKey: 'troll',
       tier: 2,
       maxHp: 150,
       atk: 18,
@@ -55,6 +60,7 @@ export class EnemyService {
     {
       id: 'lich',
       name: 'Lich',
+      spriteKey: 'lich',
       tier: 3,
       maxHp: 120,
       atk: 22,
@@ -64,6 +70,7 @@ export class EnemyService {
     {
       id: 'mimic',
       name: 'Mimic',
+      spriteKey: 'mimic',
       tier: 3,
       maxHp: 90,
       atk: 16,
@@ -73,6 +80,7 @@ export class EnemyService {
     {
       id: 'dragon',
       name: 'Dragon',
+      spriteKey: 'dragon',
       tier: 'boss',
       maxHp: 250,
       atk: 30,

@@ -34,6 +34,7 @@ export interface Enemy {
   atk: number;
   ability: EnemyAbility;
   lootTable: ItemType[];  // item types this enemy can drop
+  spriteKey: string;      // filename stem, e.g. 'goblin-scholar' → assets/sprites/goblin-scholar_a.png
 }
 
 export interface Deck {

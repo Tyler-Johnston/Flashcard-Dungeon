@@ -38,6 +38,9 @@ export class CardBattle implements OnInit {
   // Tracks Goblin Scholar's Cram stacks — resets each room in advanceRoom()
   cramBonus = signal(0);
 
+  // Sprite variant — re-rolled on each new enemy so players see variety across rooms
+  readonly spriteVariant = signal<'a' | 'b'>('a');
+
   currentCard = computed(() => this.queue()[this.currentIndex()]);
   hasCards = computed(() => this.currentIndex() < this.queue().length);
   enemyHp = computed(() => this.run()?.enemyHp ?? 0);
@@ -45,6 +48,13 @@ export class CardBattle implements OnInit {
   inventory = computed(() => this.run()?.inventory ?? []);
   currentEnemy = computed(() => this.run()?.currentEnemy ?? null);
   currentRoom = computed(() => this.run()?.currentRoom ?? 1);
+
+  // Resolves to e.g. "assets/sprites/dragon_b.png"
+  readonly spriteUrl = computed(() => {
+    const enemy = this.currentEnemy();
+    if (!enemy) return null;
+    return `sprites/${enemy.spriteKey}_${this.spriteVariant()}.png`;
+  });
 
   async ngOnInit() {
     const run = await this.idb.getRunState();
@@ -56,6 +66,7 @@ export class CardBattle implements OnInit {
     const cards = await this.idb.getDueCards(run.deckId);
     this.queue.set(cards);
     this.run.set(run);
+    this.rollSpriteVariant();
   }
 
   flip() {
@@ -266,6 +277,7 @@ export class CardBattle implements OnInit {
 
     // Reset per-room transient state
     this.cramBonus.set(0);
+    this.rollSpriteVariant();
 
     await this.updateRun({
       currentRoom: nextRoom,
@@ -293,6 +305,11 @@ export class CardBattle implements OnInit {
   private showStatus(msg: string) {
     this.statusMessage.set(msg);
     setTimeout(() => this.statusMessage.set(null), 2000);
+  }
+
+  /** Randomly picks 'a' or 'b' — called on load and on every room advance. */
+  private rollSpriteVariant(): void {
+    this.spriteVariant.set(Math.random() < 0.5 ? 'a' : 'b');
   }
 
   goBack() {
