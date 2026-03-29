@@ -1,27 +1,42 @@
+// ViewEncapsulation.None is set on this component, so these styles are global.
+// Scoped by the .hp-bar wrapper to avoid leaking.
+
 .hp-bar {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
 
   .label {
-    font-size: 0.8rem;
-    opacity: 0.7;
-    display: block;
-    margin-bottom: 4px;
+    font-family: var(--font-ui);
+    font-size: clamp(0.58rem, 1.8vw, 0.68rem);
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
-}
 
-.track {
-  width: 100%;
-  height: 14px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 8px;
-  overflow: hidden;
-}
+  .track {
+    width: 100%;
+    height: clamp(5px, 1.2vw, 8px);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
 
-.fill {
-  height: 100%;
-  border-radius: 8px;
-  transition: width 0.3s ease;
+  .fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
-  &.green { background: #27ae60; }
-  &.red   { background: #c0392b; }
+    &.green {
+      background: linear-gradient(90deg, #1e6640, #2e9e62);
+      box-shadow: 0 0 6px rgba(46, 158, 98, 0.4);
+    }
+
+    &.red {
+      background: linear-gradient(90deg, #8b1a1a, #c0392b);
+      box-shadow: 0 0 6px rgba(192, 57, 43, 0.4);
+    }
+  }
 }
