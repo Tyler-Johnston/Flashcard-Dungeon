@@ -60,7 +60,7 @@ export class ImportComponent {
   collapsedGroups = signal<Set<string>>(new Set());
 
   readonly heroSpriteUrl = (() => {
-    const keys = ['slime', 'goblin-scholar', 'skeleton', 'dark-mage', 'troll', 'lich', 'mimic', 'dragon'];
+    const keys = ['frog', 'goober', 'knight', 'mushroom', 'minotaur', 'lich', 'mimic', 'dragon'];
     const key = keys[Math.floor(Math.random() * keys.length)];
     const variant = Math.random() < 0.5 ? 'a' : 'b';
     return `sprites/${key}_${variant}.png`;

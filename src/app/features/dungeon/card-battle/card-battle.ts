@@ -35,7 +35,7 @@ export class CardBattle implements OnInit {
   pendingNextRoom = signal(false);
   statusMessage = signal<string | null>(null);
 
-  // Tracks Goblin Scholar's Cram stacks — resets each room in advanceRoom()
+  // Tracks Goober's Cram stacks — resets each room in advanceRoom()
   cramBonus = signal(0);
 
   // Sprite variant — re-rolled on each new enemy so players see variety across rooms
@@ -49,7 +49,6 @@ export class CardBattle implements OnInit {
   currentEnemy = computed(() => this.run()?.currentEnemy ?? null);
   currentRoom = computed(() => this.run()?.currentRoom ?? 1);
 
-  // Resolves to e.g. "assets/sprites/dragon_b.png"
   readonly spriteUrl = computed(() => {
     const enemy = this.currentEnemy();
     if (!enemy) return null;
@@ -83,11 +82,11 @@ export class CardBattle implements OnInit {
 
     if (enemy.ability === 'suppress-crit' && rating === Rating.Easy) {
       effectiveRating = Rating.Good;
-      this.showStatus('Dark Mage suppresses your crit!');
+      this.showStatus(`${enemy.name} suppresses your crit!`);
     }
     if (enemy.ability === 'no-mercy' && rating === Rating.Hard) {
       effectiveRating = Rating.Again;
-      this.showStatus('Mimic shows no mercy — Hard treated as Again!');
+      this.showStatus(`${enemy.name} shows no mercy — Hard treated as Again!`);
     }
 
     const updated = this.fsrs.grade(card, effectiveRating);
@@ -97,19 +96,17 @@ export class CardBattle implements OnInit {
     let enemyDmg = 0;
 
     if (effectiveRating === Rating.Again) {
-      // Cram: Goblin Scholar gains +3 ATK per Again, stacking for this fight
       if (enemy.ability === 'cram') {
         this.cramBonus.update(b => b + 3);
-        this.showStatus(`Goblin Scholar studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
+        this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
       }
 
-      // Soul Drain: replaces normal ATK damage — each Again costs 5 max HP permanently
       if (enemy.ability === 'soul-drain') {
         const newMaxHp = Math.max(0, run.maxHp - 5);
         const newHp = Math.min(run.hp, newMaxHp);
         await this.updateRun({ maxHp: newMaxHp, hp: newHp });
-        this.showStatus(`Lich drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
-        playerDmg = 0; // drain IS the punishment, no extra ATK hit
+        this.showStatus(`${enemy.name} drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
+        playerDmg = 0;
       } else {
         playerDmg = enemy.atk + this.cramBonus();
       }
@@ -118,7 +115,7 @@ export class CardBattle implements OnInit {
       if (enemy.ability === 'troll-heal') {
         const newEnemyHp = Math.min(enemy.maxHp, run.enemyHp + 15);
         await this.updateRun({ enemyHp: newEnemyHp });
-        this.showStatus('Troll heals 15 HP!');
+        this.showStatus(`${enemy.name} heals 15 HP!`);
       }
     } else if (effectiveRating === Rating.Good) {
       enemyDmg = 25;
@@ -143,7 +140,6 @@ export class CardBattle implements OnInit {
       }
     }
 
-    // Re-read run after possible soul-drain update above
     const currentRun = this.run()!;
     const newPlayerHp = Math.max(0, currentRun.hp - playerDmg);
     let newEnemyHp = Math.max(0, currentRun.enemyHp - enemyDmg);
@@ -157,16 +153,16 @@ export class CardBattle implements OnInit {
     }
     setTimeout(() => { this.damage.set(null); this.damageTarget.set(null); }, 800);
 
-    const skeletonRevived = currentRun.activeEffects.includes('revive-used');
-    if (enemy.ability === 'revive' && newEnemyHp <= 0 && !skeletonRevived) {
+    const knightRevived = currentRun.activeEffects.includes('revive-used');
+    if (enemy.ability === 'revive' && newEnemyHp <= 0 && !knightRevived) {
       newEnemyHp = 20;
       await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'revive-used'] });
-      this.showStatus('Skeleton revives at 20 HP!');
+      this.showStatus(`${enemy.name} revives at 20 HP!`);
     }
 
     if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !currentRun.activeEffects.includes('enraged')) {
       await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'enraged'] });
-      this.showStatus('Dragon enrages — ATK doubled!');
+      this.showStatus(`${enemy.name} enrages — ATK doubled!`);
     }
 
     await this.updateRun({
@@ -275,7 +271,6 @@ export class CardBattle implements OnInit {
     const nextEnemy = this.enemyService.getEnemyForRoom(nextRoom);
     const cards = await this.idb.getDueCards(run.deckId);
 
-    // Reset per-room transient state
     this.cramBonus.set(0);
     this.rollSpriteVariant();
 
@@ -307,7 +302,6 @@ export class CardBattle implements OnInit {
     setTimeout(() => this.statusMessage.set(null), 2000);
   }
 
-  /** Randomly picks 'a' or 'b' — called on load and on every room advance. */
   private rollSpriteVariant(): void {
     this.spriteVariant.set(Math.random() < 0.5 ? 'a' : 'b');
   }

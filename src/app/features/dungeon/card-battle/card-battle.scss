@@ -90,7 +90,7 @@
 }
 
 .enemy-name {
-  font-family: var(--font-title);
+  font-family: var(--font-ui); 
   font-size: clamp(1.1rem, 4.5vw, 1.7rem);
   font-weight: 700;
   color: var(--text);
@@ -99,6 +99,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-variant-ligatures: none;
 }
 
 .enemy-ability {
