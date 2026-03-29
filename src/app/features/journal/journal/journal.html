@@ -1,0 +1,100 @@
+<div class="journal">
+
+  <div class="journal-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h1 class="journal-title">Journal</h1>
+  </div>
+
+  @if (decks().length === 0) {
+    <p class="empty-state">No decks yet. Import a deck to get started.</p>
+  } @else {
+
+    <div class="deck-tabs">
+      @for (deck of decks(); track deck.id) {
+        <button
+          class="deck-tab"
+          [class.active]="deck.id === selectedDeckId()"
+          (click)="selectDeck(deck.id)">
+          {{ deck.name }}
+        </button>
+      }
+    </div>
+
+    @if (progressSegments().length > 0) {
+      <div class="progress-bar">
+        @for (seg of progressSegments(); track seg.state) {
+          <div
+            class="progress-seg state-{{ seg.state }}"
+            [style.width.%]="seg.pct">
+            <span class="progress-tooltip">
+              {{ STATE_LABELS[seg.state] }} — {{ seg.count }} cards ({{ seg.pct.toFixed(0) }}%)
+            </span>
+          </div>
+        }
+      </div>
+      <div class="progress-legend">
+        @for (seg of progressSegments(); track seg.state) {
+          <span class="legend-item state-{{ seg.state }}">
+            <span class="legend-dot"></span>
+            {{ STATE_LABELS[seg.state] }} {{ seg.count }}
+          </span>
+        }
+      </div>
+    }
+
+    <div class="toolbar">
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Search cards…"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+      />
+      @if (availableTags().length > 1) {
+        <select
+          class="tag-select"
+          [value]="selectedTag()"
+          (change)="setTag($any($event.target).value)">
+          @for (tag of availableTags(); track tag) {
+            <option [value]="tag">{{ tag === 'all' ? 'All tags' : tag }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <div class="groups">
+      @for (group of groupedCards(); track group.state) {
+        <div class="state-group">
+
+          <button class="group-header" (click)="toggleGroup(group.state)">
+            <span class="group-accent state-{{ group.state }}"></span>
+            <span class="group-label">{{ group.label }}</span>
+            <span class="group-count">{{ group.cards.length }}</span>
+            <span class="group-chevron" [class.collapsed]="group.collapsed">▾</span>
+          </button>
+
+          @if (!group.collapsed) {
+            <div class="card-list">
+              @for (card of group.cards; track card.id) {
+                <div class="journal-card">
+                  <div class="card-accent state-{{ card.state }}"></div>
+                  <div class="card-body">
+                    <span class="card-front">{{ card.front }}</span>
+                    <span class="card-back">{{ card.back }}</span>
+                  </div>
+                  <div class="card-stats">
+                    <span class="stat-interval">{{ formatInterval(card) }}</span>
+                    <span class="stat-reps">{{ card.reps }}×</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+
+  }
+
+</div>

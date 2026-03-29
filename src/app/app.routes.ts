@@ -31,4 +31,9 @@ export const routes: Routes = [
     redirectTo: 'dungeon',
   },
   { path: '', redirectTo: 'deck', pathMatch: 'full' },
+  {
+  path: 'journal',
+  loadChildren: () =>
+    import('./features/journal/journal-module').then(m => m.JournalModule),
+  },
 ];
