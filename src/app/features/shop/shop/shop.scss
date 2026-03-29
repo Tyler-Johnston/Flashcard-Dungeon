@@ -1,0 +1,230 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.shop {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: clamp(0.85rem, 3vw, 1.75rem) clamp(0.85rem, 3vw, 1.5rem);
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+.shop-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.back-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: clamp(0.62rem, 1.9vw, 0.74rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+
+  @media (hover: hover) {
+    &:hover { color: var(--text); border-color: var(--border); }
+  }
+}
+
+.shop-title {
+  font-family: var(--font-title);
+  font-size: clamp(1.2rem, 5vw, 1.8rem);
+  color: var(--text);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 24px rgba(232, 131, 58, 0.2);
+  margin: 0;
+  flex: 1;
+}
+
+// ─── Gold Display ─────────────────────────────────────────────────────────────
+
+.gold-display {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(200, 168, 32, 0.06);
+  border: 1px solid rgba(200, 168, 32, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+}
+
+.gold-coin {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-image: url('/sprites/rpgItems.png');
+  background-size: 160px 160px;
+  background-repeat: no-repeat;
+  background-position: -20px -100px; // 1,5 at 1.25x
+  image-rendering: pixelated;
+  vertical-align: middle;
+
+  &.small {
+    width: 16px;
+    height: 16px;
+    background-size: 128px 128px;
+    background-position: -16px -80px;
+  }
+}
+
+.gold-amount {
+  font-family: var(--font-ui);
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  letter-spacing: 0.08em;
+  color: var(--easy);
+  font-weight: 600;
+}
+
+// ─── Status Flash ─────────────────────────────────────────────────────────────
+
+.status-flash {
+  font-family: var(--font-ui);
+  font-size: clamp(0.65rem, 2vw, 0.75rem);
+  letter-spacing: 0.08em;
+  color: var(--good);
+  min-height: 1.2em;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  text-align: center;
+
+  &.visible { opacity: 1; }
+}
+
+// ─── Subtitle ────────────────────────────────────────────────────────────────
+
+.shop-subtitle {
+  font-family: var(--font-card);
+  font-style: italic;
+  font-size: clamp(0.8rem, 2.2vw, 0.92rem);
+  color: var(--text-dim);
+  text-align: center;
+}
+
+// ─── Shop Grid ────────────────────────────────────────────────────────────────
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: clamp(0.6rem, 2vw, 1rem);
+  padding-bottom: 2rem;
+}
+
+// ─── Shop Card ────────────────────────────────────────────────────────────────
+
+.shop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  transition: border-color 0.2s;
+
+  &.owned {
+    border-color: rgba(46, 125, 82, 0.4);
+    background: rgba(46, 125, 82, 0.04);
+  }
+
+  &.unaffordable {
+    opacity: 0.55;
+  }
+
+  @media (hover: hover) {
+    &:not(.owned):not(.unaffordable):hover {
+      border-color: var(--border-glow);
+    }
+  }
+}
+
+.item-sprite {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: center;
+  flex: 1;
+}
+
+.item-name {
+  font-family: var(--font-ui);
+  font-size: clamp(0.78rem, 2.2vw, 0.9rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ember);
+}
+
+.item-desc {
+  font-family: var(--font-card);
+  font-style: italic;
+  font-size: clamp(0.72rem, 2vw, 0.84rem);
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+// ─── Item Footer ──────────────────────────────────────────────────────────────
+
+.item-footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.buy-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(200, 168, 32, 0.08);
+  border: 1px solid rgba(200, 168, 32, 0.35);
+  border-radius: var(--radius-sm);
+  color: var(--easy);
+  font-family: var(--font-ui);
+  font-size: clamp(0.68rem, 2vw, 0.78rem);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  @media (hover: hover) {
+    &:not(:disabled):hover {
+      background: rgba(200, 168, 32, 0.15);
+      border-color: rgba(200, 168, 32, 0.6);
+    }
+  }
+}
+
+.owned-badge {
+  font-family: var(--font-ui);
+  font-size: clamp(0.62rem, 1.8vw, 0.72rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--good);
+}

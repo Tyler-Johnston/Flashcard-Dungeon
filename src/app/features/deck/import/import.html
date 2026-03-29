@@ -1,4 +1,5 @@
 <div class="import-page">
+
   <h1>Flashcard Dungeon</h1>
 
   <div class="hero-frame">
@@ -14,8 +15,15 @@
     </label>
   </div>
 
-  <!-- New Deck -->
-  <button class="new-deck-btn" (click)="newDeck()">+ New Deck</button>
+  <!-- Toolbar -->
+  <div class="deck-toolbar">
+    <button class="new-deck-btn" (click)="newDeck()">+ New Deck</button>
+    <button class="shop-btn" (click)="goShop()">⚑ Shop</button>
+    <div class="gold-display">
+      <span class="gold-coin"></span>
+      <span class="gold-amount">{{ gold() }}</span>
+    </div>
+  </div>
 
   <!-- Status Message -->
   @if (status() !== 'idle') {

@@ -10,8 +10,8 @@ const MASTERED_DAYS = 21;
 export interface DeckStats {
   deck: Deck;
   cards: Card[];
-  completion: number;       // 0–100
-  counts: Record<number, number>; // by state
+  completion: number;
+  counts: Record<number, number>;
   totalCards: number;
 }
 
@@ -23,10 +23,10 @@ export interface DeckGroup {
 }
 
 function scoreCard(card: Card): number {
-  if (card.state === 0) return 0;                          // New
-  if (card.state === 1 || card.state === 3) return 0.25;  // Learning / Relearning
-  if (card.state === 2 && card.scheduledDays >= MASTERED_DAYS) return 1; // Mastered
-  return 0.75;                                             // Review, not yet mastered
+  if (card.state === 0) return 0;
+  if (card.state === 1 || card.state === 3) return 0.25;
+  if (card.state === 2 && card.scheduledDays >= MASTERED_DAYS) return 1;
+  return 0.75;
 }
 
 function deckCompletion(cards: Card[]): number {
@@ -55,18 +55,18 @@ export class ImportComponent {
   private enemyService = inject(EnemyService);
 
   deckStats = signal<DeckStats[]>([]);
+  gold = signal(0);
   status = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
   message = signal('');
   collapsedGroups = signal<Set<string>>(new Set());
 
   readonly heroSpriteUrl = (() => {
-    const keys = ['frog', 'goober', 'knight', 'mushroom', 'minotaur', 'lich', 'mimic', 'dragon'];
+    const keys = ['mutant_frog', 'goober', 'knight', 'mushroom', 'minotaur', 'lich', 'mimic', 'dragon'];
     const key = keys[Math.floor(Math.random() * keys.length)];
     const variant = Math.random() < 0.5 ? 'a' : 'b';
     return `sprites/${key}_${variant}.png`;
   })();
 
-  // Group order: Novice → Apprentice → Adept → Mastered
   readonly GROUP_ORDER = ['Novice', 'Apprentice', 'Adept', 'Mastered'];
   readonly GROUP_RANGES: Record<string, string> = {
     Novice: '0–24%',
@@ -78,7 +78,6 @@ export class ImportComponent {
   deckGroups = computed((): DeckGroup[] => {
     const stats = this.deckStats();
     const collapsed = this.collapsedGroups();
-
     return this.GROUP_ORDER.map(label => ({
       label,
       range: this.GROUP_RANGES[label],
@@ -89,6 +88,8 @@ export class ImportComponent {
 
   async ngOnInit() {
     await this.loadDecks();
+    const profile = await this.idb.getProfile();
+    this.gold.set(profile.gold);
   }
 
   private async loadDecks() {
@@ -114,7 +115,6 @@ export class ImportComponent {
     this.collapsedGroups.set(s);
   }
 
-  // Returns segments for the mini progress bar on each deck card
   progressSegments(stats: DeckStats) {
     const total = stats.totalCards;
     if (total === 0) return [];
@@ -128,6 +128,10 @@ export class ImportComponent {
 
   newDeck() {
     this.router.navigate(['/editor']);
+  }
+
+  goShop() {
+    this.router.navigate(['/shop']);
   }
 
   async onFileSelected(event: Event) {
@@ -171,6 +175,8 @@ export class ImportComponent {
       activeEffects: [],
       powerups: [],
       startedAt: Date.now(),
+      roomsCleared: 0,
+      uniqueCardsReviewed: [],
     });
 
     this.router.navigate(['/dungeon']);

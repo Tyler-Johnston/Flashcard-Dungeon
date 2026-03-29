@@ -4,20 +4,31 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 // --- Enums ---
 
 export type EnemyTier = 1 | 2 | 3 | 'boss';
-
 export type ItemType = 'potion' | 'scroll' | 'shield' | 'crit';
-
 export type EnemyAbility =
   | 'none'
-  | 'cram'          // Goblin Scholar — gains +3 ATK per Again
-  | 'revive'        // Skeleton — revives once at 20 HP
-  | 'suppress-crit' // Dark Mage — Easy deals Good damage only
-  | 'troll-heal'    // Troll — heals when player rates Hard
-  | 'soul-drain'    // Lich — each Again reduces player max HP by 5
-  | 'no-mercy'      // Mimic — Hard treated same as Again
-  | 'enrage';       // Dragon — doubles ATK at 50% HP
+  | 'cram'
+  | 'revive'
+  | 'suppress-crit'
+  | 'troll-heal'
+  | 'soul-drain'
+  | 'no-mercy'
+  | 'enrage';
+
+export type ShopUpgradeId =
+  | 'extra-hp'
+  | 'starting-shield'
+  | 'random-item'
+  | 'extra-inventory'
+  | 'better-loot';
 
 // --- Core Types ---
+
+export interface PlayerProfile {
+  id: 'player';
+  gold: number;
+  upgrades: ShopUpgradeId[];
+}
 
 export interface Item {
   id: string;
@@ -33,8 +44,8 @@ export interface Enemy {
   maxHp: number;
   atk: number;
   ability: EnemyAbility;
-  lootTable: ItemType[];  // item types this enemy can drop
-  spriteKey: string;      // filename stem, e.g. 'goblin-scholar' → assets/sprites/goblin-scholar_a.png
+  lootTable: ItemType[];
+  spriteKey: string;
 }
 
 export interface Deck {
@@ -66,8 +77,8 @@ export interface RunState {
   deckId: string;
   hp: number;
   maxHp: number;
-  currentRoom: number;    // 1, 2, 3, then boss
-  totalRooms: number;     // always 3 before boss
+  currentRoom: number;
+  totalRooms: number;
   currentEnemy: Enemy;
   enemyHp: number;
   consecutiveAgain: number;
@@ -76,6 +87,8 @@ export interface RunState {
   activeEffects: string[];
   powerups: string[];
   startedAt: number;
+  roomsCleared: number;
+  uniqueCardsReviewed: string[];
 }
 
 // --- IDB Schema ---
@@ -98,6 +111,10 @@ interface FlashcardDungeonDB extends DBSchema {
     key: string;
     value: RunState;
   };
+  profile: {
+    key: string;
+    value: PlayerProfile;
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -105,22 +122,60 @@ export class IndexedDbService {
   private db!: IDBPDatabase<FlashcardDungeonDB>;
 
   async init(): Promise<void> {
-    this.db = await openDB<FlashcardDungeonDB>('flashcard-dungeon', 2, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains('decks')) {
-          const deckStore = db.createObjectStore('decks', { keyPath: 'id' });
-          deckStore.createIndex('by-name', 'name');
+    this.db = await openDB<FlashcardDungeonDB>('flashcard-dungeon', 3, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 2) {
+          if (!db.objectStoreNames.contains('decks')) {
+            const deckStore = db.createObjectStore('decks', { keyPath: 'id' });
+            deckStore.createIndex('by-name', 'name');
+          }
+          if (!db.objectStoreNames.contains('cards')) {
+            const cardStore = db.createObjectStore('cards', { keyPath: 'id' });
+            cardStore.createIndex('by-deck', 'deckId');
+            cardStore.createIndex('by-due', 'due');
+          }
+          if (!db.objectStoreNames.contains('run')) {
+            db.createObjectStore('run', { keyPath: 'id' });
+          }
         }
-        if (!db.objectStoreNames.contains('cards')) {
-          const cardStore = db.createObjectStore('cards', { keyPath: 'id' });
-          cardStore.createIndex('by-deck', 'deckId');
-          cardStore.createIndex('by-due', 'due');
-        }
-        if (!db.objectStoreNames.contains('run')) {
-          db.createObjectStore('run', { keyPath: 'id' });
+        if (oldVersion < 3) {
+          if (!db.objectStoreNames.contains('profile')) {
+            db.createObjectStore('profile', { keyPath: 'id' });
+          }
         }
       },
     });
+  }
+
+  // --- Profile / Gold / Upgrades ---
+
+  async getProfile(): Promise<PlayerProfile> {
+    const profile = await this.db.get('profile', 'player');
+    return profile ?? { id: 'player', gold: 0, upgrades: [] };
+  }
+
+  async addGold(amount: number): Promise<PlayerProfile> {
+    const profile = await this.getProfile();
+    const updated: PlayerProfile = { ...profile, gold: profile.gold + amount };
+    await this.db.put('profile', updated);
+    return updated;
+  }
+
+  async purchaseUpgrade(upgradeId: ShopUpgradeId, cost: number): Promise<PlayerProfile | null> {
+    const profile = await this.getProfile();
+    if (profile.gold < cost) return null;
+    if (profile.upgrades.includes(upgradeId)) return profile; // already owned
+    const updated: PlayerProfile = {
+      ...profile,
+      gold: profile.gold - cost,
+      upgrades: [...profile.upgrades, upgradeId],
+    };
+    await this.db.put('profile', updated);
+    return updated;
+  }
+
+  hasUpgrade(profile: PlayerProfile, id: ShopUpgradeId): boolean {
+    return profile.upgrades.includes(id);
   }
 
   // --- Deck operations ---

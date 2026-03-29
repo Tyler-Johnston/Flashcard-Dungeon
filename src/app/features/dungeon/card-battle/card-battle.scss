@@ -436,3 +436,16 @@
   &.item-crit   { background-position:   0px -144px; }
   &.item-scroll { background-position:  -48px -336px; }
 }
+
+.gold-coin {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-image: url('/sprites/rpgItems.png');
+  background-size: 192px 192px;
+  background-repeat: no-repeat;
+  background-position: -24px -120px; // col 1, row 5 at 1.5x scale
+  image-rendering: pixelated;
+  vertical-align: middle;
+  flex-shrink: 0;
+}

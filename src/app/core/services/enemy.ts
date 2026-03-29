@@ -9,8 +9,8 @@ export class EnemyService {
   private enemies: Enemy[] = [
     {
       id: 'frog',
-      name: 'Frog',
-      spriteKey: 'frog',
+      name: 'Mutant Frog',
+      spriteKey: 'mutant_frog',
       tier: 1,
       maxHp: 60,
       atk: 8,

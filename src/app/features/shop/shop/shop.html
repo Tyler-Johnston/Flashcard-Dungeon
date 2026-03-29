@@ -1,0 +1,49 @@
+<div class="shop">
+
+  <div class="shop-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h1 class="shop-title">Shop</h1>
+    <div class="gold-display">
+      <span class="gold-coin"></span>
+      <span class="gold-amount">{{ profile()?.gold ?? 0 }}</span>
+    </div>
+  </div>
+
+  <div class="status-flash" [class.visible]="statusMsg() !== null">
+    {{ statusMsg() }}
+  </div>
+
+  <p class="shop-subtitle">Spend gold on permanent upgrades that apply to every run.</p>
+
+  <div class="shop-grid">
+    @for (item of shopItems; track item.id) {
+      <div class="shop-card"
+           [class.owned]="isOwned(item.id)"
+           [class.unaffordable]="!canAfford(item.cost) && !isOwned(item.id)">
+
+        <div class="item-sprite" [ngStyle]="spriteStyle(item)"></div>
+
+        <div class="item-info">
+          <span class="item-name">{{ item.name }}</span>
+          <span class="item-desc">{{ item.description }}</span>
+        </div>
+
+        <div class="item-footer">
+          @if (isOwned(item.id)) {
+            <span class="owned-badge">✓ Owned</span>
+          } @else {
+            <button
+              class="buy-btn"
+              [disabled]="!canAfford(item.cost)"
+              (click)="buy(item)">
+              <span class="gold-coin small"></span>
+              {{ item.cost }}
+            </button>
+          }
+        </div>
+
+      </div>
+    }
+  </div>
+
+</div>

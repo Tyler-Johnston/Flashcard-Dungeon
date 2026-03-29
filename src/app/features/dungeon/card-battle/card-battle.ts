@@ -6,6 +6,10 @@ import { FsrsService, Rating } from '../../../core/services/fsrs';
 import { EnemyService } from '../../../core/services/enemy';
 import { HpBarComponent } from '../../../shared/components/hp-bar/hp-bar';
 
+const GOLD_PER_ROOM = 10;
+const GOLD_PER_UNIQUE_CARD = 1;
+const GOLD_VICTORY_BONUS = 25;
+
 @Component({
   selector: 'app-card-battle',
   imports: [CommonModule, HpBarComponent],
@@ -35,10 +39,10 @@ export class CardBattle implements OnInit {
   pendingNextRoom = signal(false);
   statusMessage = signal<string | null>(null);
 
-  // Tracks Goober's Cram stacks — resets each room in advanceRoom()
-  cramBonus = signal(0);
+  // Gold earned this run — shown on run-over screen
+  goldEarned = signal(0);
 
-  // Sprite variant — re-rolled on each new enemy so players see variety across rooms
+  cramBonus = signal(0);
   readonly spriteVariant = signal<'a' | 'b'>('a');
 
   currentCard = computed(() => this.queue()[this.currentIndex()]);
@@ -61,7 +65,6 @@ export class CardBattle implements OnInit {
       this.router.navigate(['/deck']);
       return;
     }
-
     const cards = await this.idb.getDueCards(run.deckId);
     this.queue.set(cards);
     this.run.set(run);
@@ -76,6 +79,13 @@ export class CardBattle implements OnInit {
     const card = this.currentCard();
     const run = this.run();
     if (!card || !this.flipped() || !run) return;
+
+    // Track unique cards reviewed
+    if (!run.uniqueCardsReviewed.includes(card.id)) {
+      await this.updateRun({
+        uniqueCardsReviewed: [...run.uniqueCardsReviewed, card.id],
+      });
+    }
 
     let effectiveRating = rating;
     const enemy = run.currentEnemy;
@@ -100,7 +110,6 @@ export class CardBattle implements OnInit {
         this.cramBonus.update(b => b + 3);
         this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
       }
-
       if (enemy.ability === 'soul-drain') {
         const newMaxHp = Math.max(0, run.maxHp - 5);
         const newHp = Math.min(run.hp, newMaxHp);
@@ -175,7 +184,7 @@ export class CardBattle implements OnInit {
     this.currentIndex.update(i => i + 1);
 
     if (newPlayerHp <= 0) {
-      this.runOver.set(true);
+      await this.endRun(false);
       return;
     }
 
@@ -185,7 +194,7 @@ export class CardBattle implements OnInit {
     }
 
     if (!this.hasCards()) {
-      this.runOver.set(true);
+      await this.endRun(false);
     }
   }
 
@@ -222,6 +231,9 @@ export class CardBattle implements OnInit {
   async handleEnemyDefeated() {
     const run = this.run();
     if (!run) return;
+
+    // Increment rooms cleared
+    await this.updateRun({ roomsCleared: run.roomsCleared + 1 });
 
     const offer = this.enemyService.rollLoot(run.currentEnemy);
     if (offer) {
@@ -262,9 +274,7 @@ export class CardBattle implements OnInit {
     const nextRoom = run.currentRoom + 1;
 
     if (nextRoom > run.totalRooms + 1) {
-      this.victory.set(true);
-      this.runOver.set(true);
-      await this.idb.clearRunState();
+      await this.endRun(true);
       return;
     }
 
@@ -287,6 +297,26 @@ export class CardBattle implements OnInit {
     this.currentIndex.set(0);
     this.flipped.set(false);
     this.pendingNextRoom.set(false);
+  }
+
+  private async endRun(isVictory: boolean) {
+    const run = this.run();
+    if (!run) return;
+
+    // Calculate gold
+    const roomGold = run.roomsCleared * GOLD_PER_ROOM;
+    const cardGold = run.uniqueCardsReviewed.length * GOLD_PER_UNIQUE_CARD;
+    const victoryBonus = isVictory ? GOLD_VICTORY_BONUS : 0;
+    const total = roomGold + cardGold + victoryBonus;
+
+    if (total > 0) {
+      await this.idb.addGold(total);
+      this.goldEarned.set(total);
+    }
+
+    this.victory.set(isVictory);
+    this.runOver.set(true);
+    await this.idb.clearRunState();
   }
 
   private async updateRun(partial: Partial<RunState>) {

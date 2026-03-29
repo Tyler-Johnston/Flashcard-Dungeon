@@ -9,9 +9,17 @@
         <h2>💀 Defeated...</h2>
         <p>The dungeon claims another adventurer.</p>
       } @else {
-        <h2>⚔️ Room Cleared!</h2>
-        <p>All cards answered.</p>
+        <h2>⚔️ Run Over</h2>
+        <p>No cards left to answer.</p>
       }
+
+      @if (goldEarned() > 0) {
+        <div class="gold-reward">
+          <span class="gold-coin"></span>
+          <span class="gold-amount">+{{ goldEarned() }} Gold</span>
+        </div>
+      }
+
       <div class="run-over-actions">
         <button class="btn good" (click)="playAgain()">▶ Play Again</button>
         <button class="btn hard" (click)="goBack()">← Back to Decks</button>
@@ -73,7 +81,6 @@
 
     @if (currentEnemy()) {
       <div class="encounter-row">
-
         <div class="enemy-frame">
           @if (spriteUrl()) {
             <img
@@ -84,7 +91,6 @@
             />
           }
         </div>
-
         <div class="encounter-details">
           <span class="enemy-name">{{ currentEnemy()!.name }}</span>
           @if (enemyService.getAbilityDescription(currentEnemy()!)) {
@@ -103,7 +109,6 @@
             }
           </div>
         </div>
-
       </div>
     }
 

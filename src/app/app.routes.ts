@@ -32,6 +32,11 @@ export const routes: Routes = [
       import('./features/boss/boss-module').then(m => m.BossModule),
   },
   {
+    path: 'shop',
+    loadChildren: () =>
+      import('./features/shop/shop-module').then(m => m.ShopModule),
+  },
+  {
     path: '**',
     redirectTo: 'deck',
   },
