@@ -25,7 +25,7 @@ export class EnemyService {
       maxHp: 80,
       atk: 12,
       ability: 'cram',
-      lootTable: ['scroll', 'potion'],
+      lootTable: ['skip', 'potion'],
     },
     {
       id: 'knight',
@@ -45,7 +45,7 @@ export class EnemyService {
       maxHp: 70,
       atk: 20,
       ability: 'suppress-crit',
-      lootTable: ['crit', 'scroll'],
+      lootTable: ['crit', 'skip'],
     },
     {
       id: 'minotaur',
@@ -65,7 +65,7 @@ export class EnemyService {
       maxHp: 120,
       atk: 22,
       ability: 'soul-drain',
-      lootTable: ['scroll', 'crit', 'shield'],
+      lootTable: ['skip', 'crit', 'shield'],
     },
     {
       id: 'mimic',
@@ -97,8 +97,8 @@ export class EnemyService {
       name: 'Health Potion',
       description: 'Restore 30 HP.',
     },
-    scroll: {
-      type: 'scroll',
+    skip: {
+      type: 'skip',
       name: 'Bomb',
       description: 'Skip the current card — no damage, no FSRS penalty.',
     },

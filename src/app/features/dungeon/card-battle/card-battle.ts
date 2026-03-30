@@ -39,7 +39,6 @@ export class CardBattle implements OnInit {
   pendingNextRoom = signal(false);
   statusMessage = signal<string | null>(null);
 
-  // Gold earned this run — shown on run-over screen
   goldEarned = signal(0);
 
   cramBonus = signal(0);
@@ -52,6 +51,21 @@ export class CardBattle implements OnInit {
   inventory = computed(() => this.run()?.inventory ?? []);
   currentEnemy = computed(() => this.run()?.currentEnemy ?? null);
   currentRoom = computed(() => this.run()?.currentRoom ?? 1);
+
+  // ✅ NEW: unified attack calculation
+  effectiveAtk = computed(() => {
+    const enemy = this.currentEnemy();
+    const run = this.run();
+    if (!enemy || !run) return 0;
+
+    let atk = enemy.atk + this.cramBonus();
+
+    if (run.activeEffects.includes('enraged')) {
+      atk *= 2;
+    }
+
+    return atk;
+  });
 
   readonly spriteUrl = computed(() => {
     const enemy = this.currentEnemy();
@@ -80,7 +94,6 @@ export class CardBattle implements OnInit {
     const run = this.run();
     if (!card || !this.flipped() || !run) return;
 
-    // Track unique cards reviewed
     if (!run.uniqueCardsReviewed.includes(card.id)) {
       await this.updateRun({
         uniqueCardsReviewed: [...run.uniqueCardsReviewed, card.id],
@@ -108,26 +121,32 @@ export class CardBattle implements OnInit {
     if (effectiveRating === Rating.Again) {
       if (enemy.ability === 'cram') {
         this.cramBonus.update(b => b + 3);
-        this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
+        this.showStatus(
+          `${enemy.name} studies your mistake — ATK +3! (now ${this.effectiveAtk()})`
+        );
       }
+
       if (enemy.ability === 'soul-drain') {
         const newMaxHp = Math.max(0, run.maxHp - 5);
         const newHp = Math.min(run.hp, newMaxHp);
         await this.updateRun({ maxHp: newMaxHp, hp: newHp });
         this.showStatus(`${enemy.name} drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
-        playerDmg = 0;
-      } else {
-        playerDmg = enemy.atk + this.cramBonus();
       }
+
+      playerDmg = 0;
+
     } else if (effectiveRating === Rating.Hard) {
-      playerDmg = Math.floor(enemy.atk / 2);
+      playerDmg = Math.floor(this.effectiveAtk() / 2);
+
       if (enemy.ability === 'troll-heal') {
         const newEnemyHp = Math.min(enemy.maxHp, run.enemyHp + 15);
         await this.updateRun({ enemyHp: newEnemyHp });
         this.showStatus(`${enemy.name} heals 15 HP!`);
       }
+
     } else if (effectiveRating === Rating.Good) {
       enemyDmg = 25;
+
     } else if (effectiveRating === Rating.Easy) {
       enemyDmg = 60;
     }
@@ -160,17 +179,28 @@ export class CardBattle implements OnInit {
       this.damage.set(enemyDmg);
       this.damageTarget.set('enemy');
     }
-    setTimeout(() => { this.damage.set(null); this.damageTarget.set(null); }, 800);
+    setTimeout(() => {
+      this.damage.set(null);
+      this.damageTarget.set(null);
+    }, 800);
 
     const knightRevived = currentRun.activeEffects.includes('revive-used');
     if (enemy.ability === 'revive' && newEnemyHp <= 0 && !knightRevived) {
       newEnemyHp = 20;
-      await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'revive-used'] });
+      await this.updateRun({
+        activeEffects: [...currentRun.activeEffects, 'revive-used'],
+      });
       this.showStatus(`${enemy.name} revives at 20 HP!`);
     }
 
-    if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !currentRun.activeEffects.includes('enraged')) {
-      await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'enraged'] });
+    if (
+      enemy.ability === 'enrage' &&
+      newEnemyHp <= enemy.maxHp / 2 &&
+      !currentRun.activeEffects.includes('enraged')
+    ) {
+      await this.updateRun({
+        activeEffects: [...currentRun.activeEffects, 'enraged'],
+      });
       this.showStatus(`${enemy.name} enrages — ATK doubled!`);
     }
 
@@ -210,17 +240,17 @@ export class CardBattle implements OnInit {
         updates.hp = Math.min(run.maxHp, run.hp + 30);
         this.showStatus('Potion restores 30 HP!');
         break;
-      case 'scroll':
+      case 'skip':
         this.flipped.set(false);
         this.currentIndex.update(i => i + 1);
-        this.showStatus('Scroll skips the current card!');
+        this.showStatus('Bomb skips the current card!');
         break;
       case 'shield':
         this.showStatus('Shield readied — next Again blocked!');
         break;
       case 'crit':
         updates.activeEffects = [...run.activeEffects, 'crit'];
-        this.showStatus('Crit Scroll ready — next Good = Easy damage!');
+        this.showStatus('Iron Sword ready — next Good = Easy damage!');
         break;
     }
 

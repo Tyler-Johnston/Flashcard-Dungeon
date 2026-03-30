@@ -248,20 +248,22 @@
   }
 }
 
+// ─── Inventory Icons (aligned to same grid, scaled) ───────────────────────────
+
 .inv-icon {
   display: block;
   width: 32px;
   height: 32px;
   background-image: url('/sprites/rpgItems.png');
-  background-size: 256px 256px; // 2x scale
+  background-size: 256px 256px; /* 8x8 grid scaled down from 48->32 */
   background-repeat: no-repeat;
   image-rendering: pixelated;
   flex-shrink: 0;
 
-  &.item-potion { background-position:   0px    0px; }
-  &.item-shield { background-position: -192px  -64px; }
-  &.item-crit { background-position: -224px -128px; }
-  &.item-scroll { background-position: 0px -192px; }
+  &.item-potion { background-position: 0px 0px; }      // (0,0)
+  &.item-shield { background-position: -192px -64px; } // (6,2)
+  &.item-crit   { background-position: -224px -224px; }// (7,7)
+  &.item-skip   { background-position: 0px -192px; }   // (0,6)
 }
 // ─── Abandon ─────────────────────────────────────────────────────────────────
 
@@ -431,10 +433,10 @@
   image-rendering: pixelated;
   margin: 0 auto 0.25rem;
 
-  &.item-potion { background-position:   0px    0px; }
-  &.item-shield { background-position: -288px  -96px; }
-  &.item-crit   { background-position:   0px -144px; }
-  &.item-scroll { background-position:  -48px -336px; }
+  &.item-potion { background-position:   0px    0px; }      // (0,0)
+  &.item-shield { background-position: -288px  -96px; }     // (6,2)
+  &.item-crit   { background-position:   -336px -336px; }      // (7,7)
+  &.item-skip   { background-position:   0px -288px; }      // (0,6)
 }
 
 .gold-coin {

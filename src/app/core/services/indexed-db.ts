@@ -4,7 +4,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 // --- Enums ---
 
 export type EnemyTier = 1 | 2 | 3 | 'boss';
-export type ItemType = 'potion' | 'scroll' | 'shield' | 'crit';
+export type ItemType = 'potion' | 'skip' | 'shield' | 'crit';
 export type EnemyAbility =
   | 'none'
   | 'cram'
