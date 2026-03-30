@@ -117,13 +117,14 @@ export class CardBattle implements OnInit {
 
     let playerDmg = 0;
     let enemyDmg = 0;
+    let ignoreDmg = false;
 
     if (effectiveRating === Rating.Again) {
+      // Enemy-specific effects
       if (enemy.ability === 'cram') {
         this.cramBonus.update(b => b + 3);
-        this.showStatus(
-          `${enemy.name} studies your mistake — ATK +3! (now ${this.effectiveAtk()})`
-        );
+        this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${this.effectiveAtk()})`);
+        ignoreDmg = true;
       }
 
       if (enemy.ability === 'soul-drain') {
@@ -133,7 +134,9 @@ export class CardBattle implements OnInit {
         this.showStatus(`${enemy.name} drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
       }
 
-      playerDmg = 0;
+      // Apply standard damage to player
+      if (!ignoreDmg)
+        playerDmg = Math.floor(this.effectiveAtk());
 
     } else if (effectiveRating === Rating.Hard) {
       playerDmg = Math.floor(this.effectiveAtk() / 2);
