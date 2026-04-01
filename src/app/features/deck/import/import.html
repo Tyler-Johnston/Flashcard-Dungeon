@@ -6,7 +6,6 @@
     <img [src]="heroSpriteUrl" alt="Monster" class="hero-sprite" draggable="false" />
   </div>
 
-  <!-- File Upload -->
   <div class="upload-zone">
     <p>Import an Anki-format <code>.txt</code> file</p>
     <label class="upload-btn">
@@ -15,7 +14,6 @@
     </label>
   </div>
 
-  <!-- Toolbar -->
   <div class="deck-toolbar">
     <button class="new-deck-btn" (click)="newDeck()">+ New Deck</button>
     <button class="shop-btn" (click)="goShop()">⚑ Shop</button>
@@ -25,7 +23,6 @@
     </div>
   </div>
 
-  <!-- Status Message -->
   @if (status() !== 'idle') {
     <div class="message"
          [class.success]="status() === 'success'"
@@ -36,7 +33,6 @@
     </div>
   }
 
-  <!-- Deck Groups -->
   @if (deckGroups().length > 0) {
     <div class="deck-groups">
       <h2>Your Decks</h2>
@@ -57,20 +53,33 @@
                   <span class="deck-name">{{ stats.deck.name }}</span>
                   <span class="deck-completion">{{ stats.completion }}%</span>
                 </div>
+
                 <div class="deck-progress-bar">
                   @for (seg of progressSegments(stats); track seg.state) {
-                    <div class="progress-seg state-{{ seg.state }}"
-                         [style.width.%]="seg.pct">
-                    </div>
+                    <div class="progress-seg state-{{ seg.state }}" [style.width.%]="seg.pct"></div>
                   }
                 </div>
+
                 <div class="deck-meta">
                   <span class="meta-item">{{ stats.totalCards }} cards</span>
                   <span class="meta-item">{{ stats.counts[2] }} in review</span>
                   <span class="meta-item">{{ stats.counts[0] }} new</span>
                 </div>
+
+                <!-- Difficulty selector -->
+                <div class="difficulty-row">
+                  @for (diff of DIFFICULTIES; track diff.id) {
+                    <button
+                      class="diff-btn diff-{{ diff.id }}"
+                      [class.active]="getDifficulty(stats.deck.id) === diff.id"
+                      (click)="setDifficulty(stats.deck.id, diff.id)">
+                      {{ diff.label }}
+                    </button>
+                  }
+                </div>
+
                 <div class="deck-actions">
-                  <button class="btn play" (click)="startRun(stats)">▶︎ Play</button>
+                  <button class="btn play"    (click)="startRun(stats)">▶ Play</button>
                   <button class="btn journal" (click)="openJournal(stats)">≡ Journal</button>
                   <button class="btn delete"  (click)="deleteDeck(stats)">✕</button>
                 </div>

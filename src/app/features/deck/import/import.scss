@@ -428,3 +428,37 @@
   text-align: center;
   margin-top: 2rem;
 }
+
+// ─── Difficulty Selector ──────────────────────────────────────────────────────
+
+.difficulty-row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.diff-btn {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: clamp(0.55rem, 1.5vw, 0.64rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.3rem 0;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+
+  &.diff-novice.active     { color: var(--good);  border-color: rgba(46,125,82,0.5);   background: rgba(46,125,82,0.08); }
+  &.diff-apprentice.active { color: var(--easy);  border-color: rgba(200,168,32,0.5);  background: rgba(200,168,32,0.08); }
+  &.diff-adept.active      { color: var(--hard);  border-color: rgba(192,122,32,0.5);  background: rgba(192,122,32,0.08); }
+  &.diff-master.active     { color: var(--again); border-color: rgba(192,57,43,0.5);   background: rgba(192,57,43,0.08); }
+
+  @media (hover: hover) {
+    &:not(.active):hover {
+      color: var(--text);
+      border-color: var(--border-glow);
+    }
+  }
+}

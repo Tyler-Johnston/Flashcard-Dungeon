@@ -1,14 +1,12 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DeckImportService } from '../../../core/services/deck-import';
-import { IndexedDbService, Deck, Card, Item } from '../../../core/services/indexed-db';
+import { IndexedDbService, Deck, Card, Item, DIFFICULTIES, DifficultyConfig, Difficulty } from '../../../core/services/indexed-db';
 import { Router } from '@angular/router';
 import { EnemyService } from '../../../core/services/enemy';
 
 const MASTERED_DAYS = 21;
 const BASE_INVENTORY_CAP = 5;
-const BASE_LOOT_CHANCE = 0.7;
-const UPGRADED_LOOT_CHANCE = 0.85;
 
 export interface DeckStats {
   deck: Deck;
@@ -63,6 +61,11 @@ export class ImportComponent {
   message = signal('');
   collapsedGroups = signal<Set<string>>(new Set());
 
+  // Per-deck difficulty selection — keyed by deck id
+  selectedDifficulties = signal<Record<string, Difficulty>>({});
+
+  readonly DIFFICULTIES = DIFFICULTIES;
+
   readonly heroSpriteUrl = (() => {
     const keys = ['mutant_frog', 'goober', 'knight', 'mushroom', 'minotaur', 'lich', 'mimic', 'dragon'];
     const key = keys[Math.floor(Math.random() * keys.length)];
@@ -101,15 +104,27 @@ export class ImportComponent {
       const cards = await this.idb.getCardsByDeck(deck.id);
       const counts: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
       cards.forEach(c => counts[c.state]++);
-      return {
-        deck,
-        cards,
-        completion: deckCompletion(cards),
-        counts,
-        totalCards: cards.length,
-      };
+      return { deck, cards, completion: deckCompletion(cards), counts, totalCards: cards.length };
     }));
     this.deckStats.set(stats);
+
+    // Default all decks to 'apprentice'
+    const defaults: Record<string, Difficulty> = {};
+    stats.forEach(s => defaults[s.deck.id] = 'apprentice');
+    this.selectedDifficulties.set(defaults);
+  }
+
+  getDifficulty(deckId: string): Difficulty {
+    return this.selectedDifficulties()[deckId] ?? 'apprentice';
+  }
+
+  getDifficultyConfig(deckId: string): DifficultyConfig {
+    const id = this.getDifficulty(deckId);
+    return DIFFICULTIES.find(d => d.id === id)!;
+  }
+
+  setDifficulty(deckId: string, difficulty: Difficulty) {
+    this.selectedDifficulties.update(map => ({ ...map, [deckId]: difficulty }));
   }
 
   toggleGroup(label: string) {
@@ -129,13 +144,8 @@ export class ImportComponent {
     ].filter(s => s.pct > 0);
   }
 
-  newDeck() {
-    this.router.navigate(['/editor']);
-  }
-
-  goShop() {
-    this.router.navigate(['/shop']);
-  }
+  newDeck() { this.router.navigate(['/editor']); }
+  goShop()  { this.router.navigate(['/shop']); }
 
   async onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -162,68 +172,60 @@ export class ImportComponent {
       return;
     }
 
-    // Load profile to check owned upgrades
     const profile = await this.idb.getProfile();
     const has = (id: Parameters<typeof this.idb.hasUpgrade>[1]) =>
       this.idb.hasUpgrade(profile, id);
 
-    // ── Apply upgrades ──────────────────────────────────────────────────────
+    const diffConfig = this.getDifficultyConfig(stats.deck.id);
 
-    // Extra HP: +25 max HP
+    // Shop upgrades
     const maxHp = has('extra-hp') ? 125 : 100;
+    const inventoryCap = has('extra-inventory') ? BASE_INVENTORY_CAP + 1 : BASE_INVENTORY_CAP;
 
-    // Inventory cap: 6 instead of 5
-    const inventoryCap = has('extra-inventory')
-      ? BASE_INVENTORY_CAP + 1
-      : BASE_INVENTORY_CAP;
-
-    // Starting inventory
     const startingInventory: Item[] = [];
-
-    // Starting shield: always begin with a shield
     if (has('starting-shield')) {
       startingInventory.push(this.enemyService.makeItem('shield'));
     }
-
-    // Random item: begin with one random item (won't duplicate the shield slot)
     if (has('random-item')) {
-      const itemTypes: Array<'potion' | 'skip' | 'shield' | 'crit'> =
-        ['potion', 'skip', 'shield', 'crit'];
-      // Avoid adding a second shield if starting-shield is also active
-      const pool = has('starting-shield')
-        ? itemTypes.filter(t => t !== 'shield')
-        : itemTypes;
+      const pool: ItemType[] = has('starting-shield')
+        ? ['potion', 'skip', 'crit']
+        : ['potion', 'skip', 'shield', 'crit'];
       const randomType = pool[Math.floor(Math.random() * pool.length)];
       startingInventory.push(this.enemyService.makeItem(randomType));
     }
-
-    // Clamp inventory to cap (shouldn't exceed it but just in case)
     const inventory = startingInventory.slice(0, inventoryCap);
 
-    // Better loot: stored on RunState as an activeEffect so card-battle reads it
     const activeEffects: string[] = has('better-loot') ? ['better-loot'] : [];
 
-    // ── Save run state ──────────────────────────────────────────────────────
-
+    // Apply difficulty HP multiplier to first enemy
     const firstEnemy = this.enemyService.getEnemyForRoom(1);
+
+    const scaledMaxHp = Math.round(firstEnemy.maxHp * diffConfig.hpMult);
+    const scaledEnemy = { ...firstEnemy, maxHp: scaledMaxHp };
+
+
     await this.idb.saveRunState({
       id: 'current',
       deckId: stats.deck.id,
       hp: maxHp,
       maxHp,
       currentRoom: 1,
-      totalRooms: 3,
-      currentEnemy: firstEnemy,
-      enemyHp: firstEnemy.maxHp,
+      totalRooms: diffConfig.totalRooms,
+      currentEnemy: scaledEnemy,  // ← scaled enemy, not raw
+      enemyHp: scaledMaxHp,
       consecutiveAgain: 0,
       cardQueue: cards.map(c => c.id),
       inventory,
+      inventoryCap,
       activeEffects,
       powerups: [],
       startedAt: Date.now(),
       roomsCleared: 0,
       uniqueCardsReviewed: [],
-      inventoryCap,
+      difficulty: diffConfig.id,
+      atkMult: diffConfig.atkMult,
+      goldMult: diffConfig.goldMult,
+      playerAtkMult: diffConfig.playerAtkMult,
     });
 
     this.router.navigate(['/dungeon']);
@@ -241,3 +243,6 @@ export class ImportComponent {
     await this.loadDecks();
   }
 }
+
+// Re-export for template use
+type ItemType = 'potion' | 'skip' | 'shield' | 'crit';

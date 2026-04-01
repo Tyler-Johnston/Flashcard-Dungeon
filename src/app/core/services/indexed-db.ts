@@ -22,6 +22,25 @@ export type ShopUpgradeId =
   | 'extra-inventory'
   | 'better-loot';
 
+export type Difficulty = 'novice' | 'apprentice' | 'adept' | 'master';
+
+export interface DifficultyConfig {
+  id: Difficulty;
+  label: string;
+  totalRooms: number;
+  atkMult: number;
+  hpMult: number;
+  goldMult: number;
+  playerAtkMult: number;
+}
+
+export const DIFFICULTIES: DifficultyConfig[] = [
+  { id: 'novice',     label: 'Novice',     totalRooms: 2, atkMult: 0.75, hpMult: 0.75, goldMult: 0.75, playerAtkMult: 1.25 },
+  { id: 'apprentice', label: 'Apprentice', totalRooms: 3, atkMult: 1,    hpMult: 1,    goldMult: 1,    playerAtkMult: 1    },
+  { id: 'adept',      label: 'Adept',      totalRooms: 4, atkMult: 1.25, hpMult: 1.25, goldMult: 1.5,  playerAtkMult: 0.85 },
+  { id: 'master',     label: 'Master',     totalRooms: 5, atkMult: 1.75, hpMult: 1.5,  goldMult: 2,    playerAtkMult: 0.7  },
+];
+
 // --- Core Types ---
 
 export interface PlayerProfile {
@@ -84,12 +103,16 @@ export interface RunState {
   consecutiveAgain: number;
   cardQueue: string[];
   inventory: Item[];
+  inventoryCap: number;
   activeEffects: string[];
   powerups: string[];
   startedAt: number;
   roomsCleared: number;
   uniqueCardsReviewed: string[];
-  inventoryCap: number;
+  difficulty: Difficulty;
+  atkMult: number;
+  goldMult: number;
+  playerAtkMult: number;
 }
 
 // --- IDB Schema ---
@@ -148,7 +171,7 @@ export class IndexedDbService {
     });
   }
 
-  // --- Profile / Gold / Upgrades ---
+  // --- Profile ---
 
   async getProfile(): Promise<PlayerProfile> {
     const profile = await this.db.get('profile', 'player');

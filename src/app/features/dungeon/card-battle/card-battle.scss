@@ -451,3 +451,80 @@
   vertical-align: middle;
   flex-shrink: 0;
 }
+
+// ─── Enemy Popover ────────────────────────────────────────────────────────────
+
+.enemy-popover-anchor {
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.enemy-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 160px;
+  background: var(--surface-raise);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  z-index: 10;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+// Also show on hover for desktop
+@media (hover: hover) {
+  .enemy-popover-anchor:hover .enemy-popover {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+.popover-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-label {
+  font-family: var(--font-ui);
+  font-size: clamp(0.6rem, 1.7vw, 0.7rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.stat-val {
+  font-family: var(--font-ui);
+  font-size: clamp(0.68rem, 2vw, 0.78rem);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.popover-ability {
+  font-family: var(--font-card);
+  font-style: italic;
+  font-size: clamp(0.65rem, 1.8vw, 0.75rem);
+  color: var(--text-dim);
+  line-height: 1.4;
+  border-top: 1px solid var(--border);
+  padding-top: 0.4rem;
+  margin-top: 0.1rem;
+}

@@ -41,14 +41,15 @@ export class CardBattle implements OnInit {
 
   cramBonus = signal(0);
   readonly spriteVariant = signal<'a' | 'b'>('a');
+  enemyInfoOpen = signal(false);
 
-  currentCard = computed(() => this.queue()[this.currentIndex()]);
-  hasCards = computed(() => this.currentIndex() < this.queue().length);
-  enemyHp = computed(() => this.run()?.enemyHp ?? 0);
-  playerHp = computed(() => this.run()?.hp ?? 0);
-  inventory = computed(() => this.run()?.inventory ?? []);
+  currentCard  = computed(() => this.queue()[this.currentIndex()]);
+  hasCards     = computed(() => this.currentIndex() < this.queue().length);
+  enemyHp      = computed(() => this.run()?.enemyHp ?? 0);
+  playerHp     = computed(() => this.run()?.hp ?? 0);
+  inventory    = computed(() => this.run()?.inventory ?? []);
   currentEnemy = computed(() => this.run()?.currentEnemy ?? null);
-  currentRoom = computed(() => this.run()?.currentRoom ?? 1);
+  currentRoom  = computed(() => this.run()?.currentRoom ?? 1);
   inventoryCap = computed(() => this.run()?.inventoryCap ?? 5);
 
   readonly spriteUrl = computed(() => {
@@ -57,12 +58,19 @@ export class CardBattle implements OnInit {
     return `sprites/${enemy.spriteKey}_${this.spriteVariant()}.png`;
   });
 
+  // Effective ATK shown in popover — accounts for cram, enrage, and difficulty
+  effectiveAtk = computed(() => {
+    const run = this.run();
+    const enemy = this.currentEnemy();
+    if (!run || !enemy) return 0;
+    let atk = enemy.atk + this.cramBonus();
+    if (run.activeEffects.includes('enraged')) atk *= 2;
+    return Math.round(atk * (run.atkMult ?? 1));
+  });
+
   async ngOnInit() {
     const run = await this.idb.getRunState();
-    if (!run) {
-      this.router.navigate(['/deck']);
-      return;
-    }
+    if (!run) { this.router.navigate(['/deck']); return; }
     const cards = await this.idb.getDueCards(run.deckId);
     this.queue.set(cards);
     this.run.set(run);
@@ -73,20 +81,24 @@ export class CardBattle implements OnInit {
     if (!this.flipped()) this.flipped.set(true);
   }
 
+  toggleEnemyInfo() {
+    this.enemyInfoOpen.update(v => !v);
+  }
+
   async rate(rating: Rating) {
     const card = this.currentCard();
     const run = this.run();
     if (!card || !this.flipped() || !run) return;
 
-    // Track unique cards reviewed
     if (!run.uniqueCardsReviewed.includes(card.id)) {
-      await this.updateRun({
-        uniqueCardsReviewed: [...run.uniqueCardsReviewed, card.id],
-      });
+      await this.updateRun({ uniqueCardsReviewed: [...run.uniqueCardsReviewed, card.id] });
     }
 
     let effectiveRating = rating;
     const enemy = run.currentEnemy;
+    const atkMult = run.atkMult ?? 1;
+    const playerAtkMult = run.playerAtkMult ?? 1;
+    const isEnraged = run.activeEffects.includes('enraged');
 
     if (enemy.ability === 'suppress-crit' && rating === Rating.Easy) {
       effectiveRating = Rating.Good;
@@ -115,23 +127,29 @@ export class CardBattle implements OnInit {
         this.showStatus(`${enemy.name} drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
         playerDmg = 0;
       } else {
-        playerDmg = enemy.atk + this.cramBonus();
+        let baseAtk = enemy.atk + this.cramBonus();
+        if (isEnraged) baseAtk *= 2;
+        playerDmg = Math.round(baseAtk * atkMult);
       }
     } else if (effectiveRating === Rating.Hard) {
-      playerDmg = Math.floor(enemy.atk / 2);
+      let baseAtk = enemy.atk;
+      if (isEnraged) baseAtk *= 2;
+      playerDmg = Math.round(Math.floor(baseAtk / 2) * atkMult);
+
       if (enemy.ability === 'troll-heal') {
-        const newEnemyHp = Math.min(enemy.maxHp, run.enemyHp + 15);
+        const newEnemyHp = run.enemyHp + 15;
         await this.updateRun({ enemyHp: newEnemyHp });
         this.showStatus(`${enemy.name} heals 15 HP!`);
       }
     } else if (effectiveRating === Rating.Good) {
-      enemyDmg = 25;
+      enemyDmg = Math.round(25 * playerAtkMult);
     } else if (effectiveRating === Rating.Easy) {
-      enemyDmg = 60;
+      enemyDmg = Math.round(60 * playerAtkMult);
     }
 
+    // Crit scroll: upgrades Good damage to Easy-tier, still scaled by playerAtkMult
     if (effectiveRating === Rating.Good && run.activeEffects.includes('crit')) {
-      enemyDmg = 60;
+      enemyDmg = Math.round(60 * playerAtkMult);
       const newEffects = run.activeEffects.filter(e => e !== 'crit');
       await this.updateRun({ activeEffects: newEffects });
       this.showStatus('Iron Sword activates!');
@@ -172,28 +190,14 @@ export class CardBattle implements OnInit {
       this.showStatus(`${enemy.name} enrages — ATK doubled!`);
     }
 
-    await this.updateRun({
-      hp: newPlayerHp,
-      enemyHp: newEnemyHp,
-      inventory: newInventory,
-    });
+    await this.updateRun({ hp: newPlayerHp, enemyHp: newEnemyHp, inventory: newInventory });
 
     this.flipped.set(false);
     this.currentIndex.update(i => i + 1);
 
-    if (newPlayerHp <= 0) {
-      await this.endRun(false);
-      return;
-    }
-
-    if (newEnemyHp <= 0) {
-      await this.handleEnemyDefeated();
-      return;
-    }
-
-    if (!this.hasCards()) {
-      await this.endRun(false);
-    }
+    if (newPlayerHp <= 0) { await this.endRun(false); return; }
+    if (newEnemyHp <= 0)  { await this.handleEnemyDefeated(); return; }
+    if (!this.hasCards())  { await this.endRun(false); }
   }
 
   async useItem(item: Item) {
@@ -232,9 +236,8 @@ export class CardBattle implements OnInit {
 
     await this.updateRun({ roomsCleared: run.roomsCleared + 1 });
 
-    // Use better-loot drop chance if upgrade is active
-    const lootThreshold = run.activeEffects.includes('better-loot') ? 0.85 : 0.7;
-    const offer = this.enemyService.rollLootWithChance(run.currentEnemy, lootThreshold);
+    const lootChance = run.activeEffects.includes('better-loot') ? 0.85 : 0.7;
+    const offer = this.enemyService.rollLootWithChance(run.currentEnemy, lootChance);
     if (offer) {
       this.lootOffer.set(offer);
       this.pendingNextRoom.set(true);
@@ -271,24 +274,25 @@ export class CardBattle implements OnInit {
     if (!run) return;
 
     const nextRoom = run.currentRoom + 1;
-
-    if (nextRoom > run.totalRooms + 1) {
-      await this.endRun(true);
-      return;
-    }
+    if (nextRoom > run.totalRooms + 1) { await this.endRun(true); return; }
 
     const nextEnemy = this.enemyService.getEnemyForRoom(nextRoom);
     const cards = await this.idb.getDueCards(run.deckId);
 
+    const hpMult = run.atkMult ?? 1;
+    const scaledMaxHp = Math.round(nextEnemy.maxHp * hpMult);
+    const scaledEnemy = { ...nextEnemy, maxHp: scaledMaxHp };
+
     this.cramBonus.set(0);
     this.rollSpriteVariant();
+    this.enemyInfoOpen.set(false);
 
     await this.updateRun({
       currentRoom: nextRoom,
-      currentEnemy: nextEnemy,
-      enemyHp: nextEnemy.maxHp,
+      currentEnemy: scaledEnemy,
+      enemyHp: scaledMaxHp,
       consecutiveAgain: 0,
-      activeEffects: run.activeEffects.filter(e => e === 'better-loot'), // preserve upgrade effects
+      activeEffects: run.activeEffects.filter(e => e === 'better-loot'),
       cardQueue: cards.map(c => c.id),
     });
 
@@ -302,10 +306,11 @@ export class CardBattle implements OnInit {
     const run = this.run();
     if (!run) return;
 
+    const goldMult = run.goldMult ?? 1;
     const roomGold = run.roomsCleared * GOLD_PER_ROOM;
     const cardGold = run.uniqueCardsReviewed.length * GOLD_PER_UNIQUE_CARD;
     const victoryBonus = isVictory ? GOLD_VICTORY_BONUS : 0;
-    const total = roomGold + cardGold + victoryBonus;
+    const total = Math.round((roomGold + cardGold + victoryBonus) * goldMult);
 
     if (total > 0) {
       await this.idb.addGold(total);
@@ -339,7 +344,5 @@ export class CardBattle implements OnInit {
     this.router.navigate(['/deck']);
   }
 
-  playAgain() {
-    this.router.navigate(['/deck']);
-  }
+  playAgain() { this.router.navigate(['/deck']); }
 }

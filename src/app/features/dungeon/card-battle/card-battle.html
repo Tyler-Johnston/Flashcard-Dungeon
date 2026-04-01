@@ -81,15 +81,29 @@
 
     @if (currentEnemy()) {
       <div class="encounter-row">
-        <div class="enemy-frame">
-          @if (spriteUrl()) {
-            <img
-              [src]="spriteUrl()!"
-              [alt]="currentEnemy()!.name"
-              class="enemy-sprite"
-              draggable="false"
-            />
-          }
+        <div class="enemy-popover-anchor" (click)="toggleEnemyInfo()">
+          <div class="enemy-frame">
+            @if (spriteUrl()) {
+              <img [src]="spriteUrl()!" [alt]="currentEnemy()!.name"
+                  class="enemy-sprite" draggable="false" />
+            }
+          </div>
+
+          <div class="enemy-popover" [class.visible]="enemyInfoOpen()">
+            <div class="popover-stat">
+              <span class="stat-label">⚔ ATK</span>
+              <span class="stat-val">{{ effectiveAtk() }}</span>
+            </div>
+            <div class="popover-stat">
+              <span class="stat-label">❤ HP</span>
+              <span class="stat-val">{{ enemyHp() }} / {{ run()?.currentEnemy?.maxHp }}</span>
+            </div>
+            @if (enemyService.getAbilityDescription(currentEnemy()!)) {
+              <div class="popover-ability">
+                {{ enemyService.getAbilityDescription(currentEnemy()!) }}
+              </div>
+            }
+          </div>
         </div>
         <div class="encounter-details">
           <span class="enemy-name">{{ currentEnemy()!.name }}</span>
