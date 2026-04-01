@@ -11,8 +11,8 @@ const GOLD_PER_UNIQUE_CARD = 1;
 const GOLD_VICTORY_BONUS = 25;
 
 // Hard-coded base damage values (before playerAtkMult scaling)
-const DMG_GOOD = 25;
-const DMG_EASY = 60;
+const DMG_GOOD = 15;
+const DMG_EASY = 30;
 
 @Component({
   selector: 'app-card-battle',
@@ -51,8 +51,8 @@ export class CardBattle implements OnInit {
   /** Fang: passive bleed damage dealt every card regardless of rating. */
   bleedDamage = signal(5);
 
-  /** Orc Warlord: number of cards remaining in taunt cycle (0 = not yet started). */
-  tauntCardsLeft = signal(0);
+  /** Orc Warlord: number of cards remaining in warcry cycle (0 = not yet started). */
+  warcryCounter = signal(0);
 
   /** Chicken Army: number of chick stacks accumulated (+8 ATK each, max 3). */
   swarmStacks = signal(0);
@@ -106,30 +106,13 @@ export class CardBattle implements OnInit {
   flip() {
     if (this.flipped()) return;
     this.flipped.set(true);
-    this.onCardReveal();
-  }
 
-  /** Called once per card reveal — handles pre-rating ability hooks. */
-  private onCardReveal() {
-    const run = this.run();
-    const enemy = run?.currentEnemy;
-    if (!enemy) return;
-
-    // Mutant Turtle — shell alternates each card
-    if (enemy.ability === 'shell') {
+    // Mutant Turtle — toggle shell state silently on each flip
+    const enemy = this.run()?.currentEnemy;
+    if (enemy?.ability === 'shell') {
       const next = this.shellAlternator() + 1;
       this.shellAlternator.set(next);
-      const active = next % 2 === 1;
-      this.shellActive.set(active);
-      if (active) {
-        this.showStatus('Shell hardens — your hit is blocked this card!');
-      }
-      // no message when shell is down — silence is fine
-    }
-
-    // Orc Warlord — announce taunt on first reveal (taunt activates on first rating)
-    if (enemy.ability === 'taunt' && this.tauntCardsLeft() > 0) {
-      this.showStatus(`Taunted! Damage capped at Hard for ${this.tauntCardsLeft()} more card(s).`);
+      this.shellActive.set(next % 2 === 1);
     }
   }
 
@@ -246,19 +229,13 @@ export class CardBattle implements OnInit {
     }
 
     // Orc Warlord: taunt — cap Good/Easy damage to Hard tier every 3 cards
-    if (enemy.ability === 'taunt') {
-      // Activate on first card of the fight
-      if (this.tauntCardsLeft() === 0) {
-        this.tauntCardsLeft.set(3);
+    if (enemy.ability === 'warcry') {
+      const next = this.warcryCounter() + 1;
+      this.warcryCounter.set(next);
+      if (next % 4 === 0) {
+        enemyDmg = Math.round(effectiveBaseAtk * 2 * atkMult);
+        this.showStatus(`Warcry! The Orc deals double damage!`);
       }
-      if (this.tauntCardsLeft() > 0 && (effectiveRating === Rating.Good || effectiveRating === Rating.Easy)) {
-        playerDmg = Math.round(Math.floor(DMG_GOOD * playerAtkMult)); // cap to Good tier
-        const remaining = this.tauntCardsLeft() - 1;
-        this.showStatus(`Taunted! Damage capped at Hard tier. (${remaining} card(s) left)`);
-      }
-      // Tick down; re-arm permanently every 3 cards
-      const next = this.tauntCardsLeft() - 1;
-      this.tauntCardsLeft.set(next <= 0 ? 3 : next);
     }
 
     // Chicken Army: swarm — +8 ATK per Again, max 3 stacks
@@ -276,7 +253,7 @@ export class CardBattle implements OnInit {
     if (enemy.ability === 'shell' && this.shellActive()) {
       playerDmg = 0;
       this.shellActive.set(false); // shell consumed until next toggle
-      this.showStatus('🐢 Shell absorbed the hit — no damage!');
+      this.showStatus('Shell absorbed the hit — no damage!');
     }
 
     // ── Shield item blocks incoming damage ────────────────────────────────
@@ -354,19 +331,19 @@ export class CardBattle implements OnInit {
     switch (item.type) {
       case 'potion':
         updates.hp = Math.min(run.maxHp, run.hp + 30);
-        this.showStatus('🧪 Potion restores 30 HP!');
+        this.showStatus('Potion restores 30 HP!');
         break;
       case 'skip':
         this.flipped.set(false);
         this.currentIndex.update(i => i + 1);
-        this.showStatus('💣 Bomb skips the current card!');
+        this.showStatus('Bomb skips the current card!');
         break;
       case 'shield':
-        this.showStatus('🛡️ Shield readied — next hit blocked!');
+        this.showStatus('Shield readied — next hit blocked!');
         break;
       case 'crit':
         updates.activeEffects = [...run.activeEffects, 'crit'];
-        this.showStatus('⚔️ Iron Sword ready — next Good = Easy damage!');
+        this.showStatus('Iron Sword ready — next Good = Easy damage!');
         break;
     }
 
@@ -418,9 +395,9 @@ export class CardBattle implements OnInit {
     if (!run) return;
 
     const nextRoom = run.currentRoom + 1;
-    if (nextRoom > run.totalRooms + 1) { await this.endRun(true); return; }
+    if (nextRoom > run.totalRooms) { await this.endRun(true); return; }
 
-    const nextEnemy = this.enemyService.getEnemyForRoom(nextRoom);
+    const nextEnemy = this.enemyService.getEnemyForRoom(nextRoom, run.totalRooms, run.difficulty);
     const cards = await this.idb.getDueCards(run.deckId);
 
     const hpMult = run.atkMult ?? 1;
@@ -429,7 +406,7 @@ export class CardBattle implements OnInit {
 
     // Reset all per-enemy ability state
     this.cramBonus.set(0);
-    this.tauntCardsLeft.set(0);
+    this.warcryCounter.set(0);
     this.swarmStacks.set(0);
     this.shellAlternator.set(0);
     this.shellActive.set(false);

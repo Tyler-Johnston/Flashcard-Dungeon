@@ -104,7 +104,7 @@ export class EnemyService {
       tier: 'boss',
       maxHp: 280,
       atk: 25,
-      ability: 'taunt',
+      ability: 'warcry',
       lootTable: [],
     },
     {
@@ -156,8 +156,8 @@ export class EnemyService {
 
   // --- Room Progression ---
 
-  getEnemyForRoom(room: number): Enemy {
-    if (room >= 4) return this.getRandomBoss();
+  getEnemyForRoom(room: number, totalRooms: number, difficulty: string): Enemy {
+    if (room >= totalRooms) return this.getBossForDifficulty(difficulty);
 
     const tierMap: Record<number, EnemyTier[]> = {
       1: [1],
@@ -165,7 +165,7 @@ export class EnemyService {
       3: [2, 3],
     };
 
-    const allowedTiers = tierMap[room] ?? [1];
+    const allowedTiers = tierMap[room] ?? [2, 3];
     const pool = this.enemies.filter(
       e => e.tier !== 'boss' && allowedTiers.includes(e.tier as EnemyTier)
     );
@@ -173,15 +173,16 @@ export class EnemyService {
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
-  /** Returns a random boss enemy for variety across runs. */
-  getRandomBoss(): Enemy {
-    const bosses = this.enemies.filter(e => e.tier === 'boss');
-    return bosses[Math.floor(Math.random() * bosses.length)];
-  }
+  getBossForDifficulty(difficulty: string): Enemy {
+    const easyBosses = ['dragon', 'chicken_army'];
+    const hardBosses = ['orc', 'mutant_turtle'];
 
-  /** Legacy: kept for backwards compatibility. */
-  getBoss(): Enemy {
-    return this.getRandomBoss();
+    const isHard = difficulty === 'adept' || difficulty === 'master';
+    const pool = isHard
+      ? this.enemies.filter(e => hardBosses.includes(e.id))
+      : this.enemies.filter(e => easyBosses.includes(e.id));
+
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   // --- Loot ---
@@ -240,7 +241,7 @@ export class EnemyService {
       'no-mercy': 'Hard is treated the same as Again.',
       bleed: 'Passively deals +5 bonus damage on every card rating, regardless of your answer.',
       enrage: 'Doubles ATK when below 50% HP.',
-      taunt: 'Forces your next 3 cards to be rated at Hard tier — Good and Easy damage is capped.',
+      'warcry': 'Every 4th card, unleashes a Warcry — deals double ATK damage regardless of your answer.',
       swarm: 'Each Again summons a Chick: permanently grants +8 ATK (max 3 stacks).',
       shell: 'Blocks the first hit of every other card. You must strike twice in a row to pierce it.',
     };

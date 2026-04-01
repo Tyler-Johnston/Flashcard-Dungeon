@@ -77,9 +77,9 @@ export class ImportComponent {
     'mimic',
     'fang',
     'dragon',
-    'orc',
-    'chicken_army',
-    'mutant_turtle',
+    //'orc',
+    //'chicken_army',
+    //'mutant_turtle',
   ];
     const key = keys[Math.floor(Math.random() * keys.length)];
     const variant = Math.random() < 0.5 ? 'a' : 'b';
@@ -211,7 +211,7 @@ export class ImportComponent {
     const activeEffects: string[] = has('better-loot') ? ['better-loot'] : [];
 
     // Apply difficulty HP multiplier to first enemy
-    const firstEnemy = this.enemyService.getEnemyForRoom(1);
+    const firstEnemy = this.enemyService.getEnemyForRoom(1, diffConfig.totalRooms, diffConfig.id);
 
     const scaledMaxHp = Math.round(firstEnemy.maxHp * diffConfig.hpMult);
     const scaledEnemy = { ...firstEnemy, maxHp: scaledMaxHp };

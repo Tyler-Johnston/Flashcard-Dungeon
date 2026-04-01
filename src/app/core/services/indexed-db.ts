@@ -16,7 +16,7 @@ export type EnemyAbility =
   | 'enrage'
   | 'sticky-tongue'
   | 'bleed'
-  | 'taunt'
+  | 'warcry'   // was 'taunt'
   | 'swarm'
   | 'shell';
 
@@ -40,10 +40,42 @@ export interface DifficultyConfig {
 }
 
 export const DIFFICULTIES: DifficultyConfig[] = [
-  { id: 'novice',     label: 'Novice',     totalRooms: 2, atkMult: 0.75, hpMult: 0.75, goldMult: 0.75, playerAtkMult: 1.25 },
-  { id: 'apprentice', label: 'Apprentice', totalRooms: 3, atkMult: 1,    hpMult: 1,    goldMult: 1,    playerAtkMult: 1    },
-  { id: 'adept',      label: 'Adept',      totalRooms: 4, atkMult: 1.25, hpMult: 1.25, goldMult: 1.5,  playerAtkMult: 0.85 },
-  { id: 'master',     label: 'Master',     totalRooms: 5, atkMult: 1.75, hpMult: 1.5,  goldMult: 2,    playerAtkMult: 0.7  },
+  {
+    id: 'novice',
+    label: 'Novice',
+    totalRooms: 3,
+    atkMult: 0.85,       // enemies deal less damage
+    playerAtkMult: 0.6,  // player also deals less — fights last longer
+    hpMult: 1.0,
+    goldMult: 0.75,
+  },
+  {
+    id: 'apprentice',
+    label: 'Apprentice',
+    totalRooms: 4,
+    atkMult: 1.0,
+    playerAtkMult: 0.8,
+    hpMult: 1.0,
+    goldMult: 1.0,
+  },
+  {
+    id: 'adept',
+    label: 'Adept',
+    totalRooms: 5,
+    atkMult: 1.25,
+    playerAtkMult: 1.0,
+    hpMult: 1.25,
+    goldMult: 1.25,
+  },
+  {
+    id: 'master',
+    label: 'Master',
+    totalRooms: 6,
+    atkMult: 1.5,
+    playerAtkMult: 1.0,
+    hpMult: 1.5,
+    goldMult: 1.5,
+  },
 ];
 
 // --- Core Types ---
@@ -77,6 +109,7 @@ export interface Deck {
   name: string;
   tags: string[];
   createdAt: number;
+  builtInId?: string; // add this
 }
 
 export interface Card {

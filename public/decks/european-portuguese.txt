@@ -1,0 +1,563 @@
+#separator:tab
+#html:false
+#deck:European Portuguese
+Olá	Hello
+Bom dia	Good morning
+Boa tarde	Good afternoon
+Boa noite	Good evening / Good night
+Desculpe	Excuse me / Sorry
+Com licença	Excuse me (to get past someone)
+Por favor	Please
+Obrigado	Thank you (said by a man)
+Obrigada	Thank you (said by a woman)
+De nada	You're welcome
+Sim	Yes
+Não	No
+Talvez	Maybe
+Claro	Of course
+Tudo bem?	Is everything okay? / How are you?
+Tudo bem.	Everything is fine.
+E você?	And you?
+Mais ou menos	So-so / More or less
+Até logo	See you soon
+Até amanhã	See you tomorrow
+Até já	See you in a bit
+Tchau	Bye (informal)
+Adeus	Goodbye (formal)
+Como se chama?	What is your name? (formal)
+Como te chamas?	What is your name? (informal)
+Chamo-me...	My name is...
+Prazer em conhecê-lo	Pleased to meet you (formal)
+Muito prazer	Nice to meet you
+De onde é?	Where are you from? (formal)
+Sou de...	I am from...
+Fala inglês?	Do you speak English?
+Não percebo	I don't understand
+Pode repetir?	Can you repeat that?
+Pode falar mais devagar?	Can you speak more slowly?
+Não sei	I don't know
+Onde é a casa de banho?	Where is the bathroom?
+Quanto custa?	How much does it cost?
+Está incluído?	Is it included?
+Aceita cartão?	Do you accept card?
+Quero...	I want...
+Queria...	I would like...
+Pode ajudar-me?	Can you help me?
+Estou perdido/a	I am lost
+Chame a polícia!	Call the police!
+Preciso de um médico	I need a doctor
+Água	Water
+Vinho	Wine
+Vinho tinto	Red wine
+Vinho branco	White wine
+Cerveja	Beer
+Sumo	Juice
+Café	Coffee
+Uma bica	Espresso (European Portuguese)
+Uma imperial	Draft beer (European Portuguese)
+Pão	Bread
+Manteiga	Butter
+Queijo	Cheese
+Fiambre	Ham (cooked)
+Presunto	Cured ham
+Ovo	Egg
+Ovos mexidos	Scrambled eggs
+Peixe	Fish
+Carne	Meat
+Frango	Chicken
+Bacalhau	Salted cod
+Arroz	Rice
+Batatas	Potatoes
+Batatas fritas	French fries
+Salada	Salad
+Sopa	Soup
+Sobremesa	Dessert
+Pastel de nata	Custard tart
+A conta, por favor	The bill, please
+Está incluído o serviço?	Is service included?
+Eu	I
+Tu	You (informal singular)
+Ele / Ela	He / She
+Nós	We
+Vocês	You (plural)
+Eles / Elas	They (masc. / fem.)
+Meu / Minha	My (masc. / fem.)
+Teu / Tua	Your informal (masc. / fem.)
+Seu / Sua	His / Her / Your formal (masc. / fem.)
+Nosso / Nossa	Our (masc. / fem.)
+Grande	Big / Large
+Pequeno/a	Small
+Bom / Boa	Good
+Mau / Má	Bad
+Bonito/a	Beautiful / Pretty
+Feio/a	Ugly
+Novo/a	New / Young
+Velho/a	Old
+Rápido/a	Fast
+Lento/a	Slow
+Caro/a	Expensive
+Barato/a	Cheap
+Fácil	Easy
+Difícil	Difficult
+Quente	Hot
+Frio/a	Cold
+Aberto/a	Open
+Fechado/a	Closed
+Cheio/a	Full
+Vazio/a	Empty
+Certo/a	Right / Correct
+Errado/a	Wrong
+Cansado/a	Tired
+Contente	Happy
+Triste	Sad
+Com fome	Hungry
+Com sede	Thirsty
+Doente	Sick / Ill
+Um	One
+Dois	Two
+Três	Three
+Quatro	Four
+Cinco	Five
+Seis	Six
+Sete	Seven
+Oito	Eight
+Nove	Nine
+Dez	Ten
+Onze	Eleven
+Doze	Twelve
+Vinte	Twenty
+Trinta	Thirty
+Cinquenta	Fifty
+Cem	One hundred
+Mil	One thousand
+Hoje	Today
+Amanhã	Tomorrow
+Ontem	Yesterday
+Agora	Now
+Depois	After / Later
+Antes	Before
+Sempre	Always
+Nunca	Never
+Às vezes	Sometimes
+Aqui	Here
+Ali	There
+Perto	Near / Close
+Longe	Far
+À esquerda	To the left
+À direita	To the right
+Em frente	Straight ahead
+Atrás	Behind
+Em cima	Above / On top
+Em baixo	Below / Under
+Segunda-feira	Monday
+Terça-feira	Tuesday
+Quarta-feira	Wednesday
+Quinta-feira	Thursday
+Sexta-feira	Friday
+Sábado	Saturday
+Domingo	Sunday
+Janeiro	January
+Fevereiro	February
+Março	March
+Abril	April
+Maio	May
+Junho	June
+Julho	July
+Agosto	August
+Setembro	September
+Outubro	October
+Novembro	November
+Dezembro	December
+Que horas são?	What time is it?
+São duas horas	It is two o'clock
+É meio-dia	It is midday
+É meia-noite	It is midnight
+Da manhã	In the morning (a.m.)
+Da tarde	In the afternoon (p.m.)
+Da noite	At night
+Casa	House / Home
+Apartamento	Apartment / Flat
+Quarto	Room / Bedroom
+Sala	Living room
+Cozinha	Kitchen
+Casa de banho	Bathroom
+Jardim	Garden
+Rua	Street
+Avenida	Avenue
+Praça	Square / Plaza
+Igreja	Church
+Hospital	Hospital
+Farmácia	Pharmacy
+Supermercado	Supermarket
+Mercado	Market
+Loja	Shop / Store
+Restaurante	Restaurant
+Estação	Station
+Metro	Underground / Subway
+Autocarro	Bus (European Portuguese)
+Comboio	Train (European Portuguese)
+Táxi	Taxi
+Aeroporto	Airport
+Hotel	Hotel
+Praia	Beach
+Rio	River
+Mar	Sea
+Passaporte	Passport
+Bilhete	Ticket
+Mala	Suitcase / Bag
+Telemóvel	Mobile phone (European Portuguese)
+Carregador	Charger
+Dinheiro	Money
+Troco	Change (money)
+Médico/a	Doctor
+Polícia	Police
+Ajuda!	Help!
+Cuidado!	Careful! / Watch out!
+Dói-me a cabeça	My head hurts
+Dói-me o estômago	My stomach hurts
+Dói-me a garganta	My throat hurts
+Febre	Fever
+Alergia	Allergy
+Pai	Father
+Mãe	Mother
+Filho / Filha	Son / Daughter
+Irmão / Irmã	Brother / Sister
+Avô / Avó	Grandfather / Grandmother
+Marido	Husband
+Mulher	Wife
+Amigo / Amiga	Friend (male / female)
+Namorado / Namorada	Boyfriend / Girlfriend
+Ser	To be (identity / permanent quality)
+Estar	To be (state / location / temporary)
+Ter	To have
+Fazer	To do / To make
+Ir	To go
+Vir	To come
+Poder	To be able to / Can
+Querer	To want
+Saber	To know (a fact / how to)
+Conhecer	To know (a person or place)
+Falar	To speak
+Comer	To eat
+Beber	To drink
+Dormir	To sleep
+Trabalhar	To work
+Estudar	To study
+Comprar	To buy
+Vender	To sell
+Abrir	To open
+Fechar	To close
+Chegar	To arrive
+Sair	To leave / To go out
+Voltar	To return
+Dar	To give
+Pôr	To put / To place
+Ver	To see
+Ouvir	To hear / To listen
+Ler	To read
+Escrever	To write
+Perceber	To understand
+Gostar de	To like
+Precisar de	To need
+Dever	To must / To owe
+Conseguir	To manage to / To succeed in
+Deixar	To let / To leave behind
+Trazer	To bring
+Levar	To take / To carry
+Ficar	To stay / To become
+Encontrar	To find / To meet
+Pensar	To think
+Acreditar	To believe
+Esperar	To wait / To hope
+Ajudar	To help
+Começar	To begin / To start
+Acabar	To finish / To end
+Continuar	To continue
+Mudar	To change
+Usar	To use
+Preferir	To prefer
+Sentir	To feel / To sense
+Perder	To lose / To miss
+Ganhar	To win / To earn
+Pagar	To pay
+Pedir	To ask for / To order
+Responder	To answer / To reply
+Acontecer	To happen
+Parecer	To seem / To appear
+Dizer	To say / To tell
+Eu sou	I am (ser — present)
+Tu és	You are (ser — present, informal)
+Ele/Ela é	He/She is (ser — present)
+Nós somos	We are (ser — present)
+Vocês são	You all are (ser — present)
+Eles/Elas são	They are (ser — present)
+Eu estou	I am (estar — present)
+Tu estás	You are (estar — present, informal)
+Ele/Ela está	He/She is (estar — present)
+Nós estamos	We are (estar — present)
+Vocês estão	You all are (estar — present)
+Eles/Elas estão	They are (estar — present)
+Eu tenho	I have (ter — present)
+Tu tens	You have (ter — present, informal)
+Ele/Ela tem	He/She has (ter — present)
+Nós temos	We have (ter — present)
+Vocês têm	You all have (ter — present)
+Eles/Elas têm	They have (ter — present)
+Eu vou	I go (ir — present)
+Tu vais	You go (ir — present, informal)
+Ele/Ela vai	He/She goes (ir — present)
+Nós vamos	We go / Let's go (ir — present)
+Vocês vão	You all go (ir — present)
+Eles/Elas vão	They go (ir — present)
+Eu faço	I do/make (fazer — present)
+Tu fazes	You do/make (fazer — present, informal)
+Ele/Ela faz	He/She does/makes (fazer — present)
+Nós fazemos	We do/make (fazer — present)
+Vocês fazem	You all do/make (fazer — present)
+Eles/Elas fazem	They do/make (fazer — present)
+Eu posso	I can (poder — present)
+Tu podes	You can (poder — present, informal)
+Ele/Ela pode	He/She can (poder — present)
+Nós podemos	We can (poder — present)
+Vocês podem	You all can (poder — present)
+Eles/Elas podem	They can (poder — present)
+Eu quero	I want (querer — present)
+Tu queres	You want (querer — present, informal)
+Ele/Ela quer	He/She wants (querer — present)
+Nós queremos	We want (querer — present)
+Vocês querem	You all want (querer — present)
+Eles/Elas querem	They want (querer — present)
+Eu sei	I know (saber — present)
+Tu sabes	You know (saber — present, informal)
+Ele/Ela sabe	He/She knows (saber — present)
+Nós sabemos	We know (saber — present)
+Vocês sabem	You all know (saber — present)
+Eles/Elas sabem	They know (saber — present)
+Eu venho	I come (vir — present)
+Tu vens	You come (vir — present, informal)
+Ele/Ela vem	He/She comes (vir — present)
+Nós vimos	We come (vir — present)
+Vocês vêm	You all come (vir — present)
+Eles/Elas vêm	They come (vir — present)
+Eu digo	I say (dizer — present)
+Tu dizes	You say (dizer — present, informal)
+Ele/Ela diz	He/She says (dizer — present)
+Nós dizemos	We say (dizer — present)
+Vocês dizem	You all say (dizer — present)
+Eles/Elas dizem	They say (dizer — present)
+Eu fui	I was / I went (ser & ir — simple past)
+Tu foste	You were / You went (ser & ir — simple past, informal)
+Ele/Ela foi	He/She was / went (ser & ir — simple past)
+Nós fomos	We were / went (ser & ir — simple past)
+Vocês foram	You all were / went (ser & ir — simple past)
+Eles/Elas foram	They were / went (ser & ir — simple past)
+Eu tive	I had (ter — simple past)
+Tu tiveste	You had (ter — simple past, informal)
+Ele/Ela teve	He/She had (ter — simple past)
+Nós tivemos	We had (ter — simple past)
+Vocês tiveram	You all had (ter — simple past)
+Eles/Elas tiveram	They had (ter — simple past)
+Eu fiz	I did/made (fazer — simple past)
+Tu fizeste	You did/made (fazer — simple past, informal)
+Ele/Ela fez	He/She did/made (fazer — simple past)
+Nós fizemos	We did/made (fazer — simple past)
+Vocês fizeram	You all did/made (fazer — simple past)
+Eles/Elas fizeram	They did/made (fazer — simple past)
+Eu vim	I came (vir — simple past)
+Tu vieste	You came (vir — simple past, informal)
+Ele/Ela veio	He/She came (vir — simple past)
+Nós viemos	We came (vir — simple past)
+Vocês vieram	You all came (vir — simple past)
+Eles/Elas vieram	They came (vir — simple past)
+Eu vi	I saw (ver — simple past)
+Tu viste	You saw (ver — simple past, informal)
+Ele/Ela viu	He/She saw (ver — simple past)
+Nós vimos	We saw (ver — simple past)
+Vocês viram	You all saw (ver — simple past)
+Eles/Elas viram	They saw (ver — simple past)
+Eu disse	I said (dizer — simple past)
+Tu disseste	You said (dizer — simple past, informal)
+Ele/Ela disse	He/She said (dizer — simple past)
+Nós dissemos	We said (dizer — simple past)
+Vocês disseram	You all said (dizer — simple past)
+Eles/Elas disseram	They said (dizer — simple past)
+Eu estava	I was (estar — imperfect)
+Tu estavas	You were (estar — imperfect, informal)
+Ele/Ela estava	He/She was (estar — imperfect)
+Nós estávamos	We were (estar — imperfect)
+Vocês estavam	You all were (estar — imperfect)
+Eles/Elas estavam	They were (estar — imperfect)
+Eu era	I was (ser — imperfect)
+Tu eras	You were (ser — imperfect, informal)
+Ele/Ela era	He/She was (ser — imperfect)
+Nós éramos	We were (ser — imperfect)
+Vocês eram	You all were (ser — imperfect)
+Eles/Elas eram	They were (ser — imperfect)
+Eu tinha	I had (ter — imperfect)
+Tu tinhas	You had (ter — imperfect, informal)
+Ele/Ela tinha	He/She had (ter — imperfect)
+Nós tínhamos	We had (ter — imperfect)
+Vocês tinham	You all had (ter — imperfect)
+Eles/Elas tinham	They had (ter — imperfect)
+Eu ia	I was going / used to go (ir — imperfect)
+Tu ias	You were going (ir — imperfect, informal)
+Ele/Ela ia	He/She was going (ir — imperfect)
+Nós íamos	We were going (ir — imperfect)
+Vocês iam	You all were going (ir — imperfect)
+Eles/Elas iam	They were going (ir — imperfect)
+Eu fazia	I was doing / used to do (fazer — imperfect)
+Tu fazias	You were doing (fazer — imperfect, informal)
+Ele/Ela fazia	He/She was doing (fazer — imperfect)
+Nós fazíamos	We were doing (fazer — imperfect)
+Vocês faziam	You all were doing (fazer — imperfect)
+Eles/Elas faziam	They were doing (fazer — imperfect)
+Eu dizia	I was saying / used to say (dizer — imperfect)
+Tu dizias	You were saying (dizer — imperfect, informal)
+Ele/Ela dizia	He/She was saying (dizer — imperfect)
+Nós dizíamos	We were saying (dizer — imperfect)
+Vocês diziam	You all were saying (dizer — imperfect)
+Eles/Elas diziam	They were saying (dizer — imperfect)
+Eu vou ser	I will be (ser — near future)
+Eu vou estar	I will be (estar — near future)
+Eu vou ter	I will have (ter — near future)
+Eu vou fazer	I will do (fazer — near future)
+Eu vou ir	I will go (ir — near future)
+Eu vou vir	I will come (vir — near future)
+Eu vou poder	I will be able to (poder — near future)
+Eu vou querer	I will want (querer — near future)
+Eu serei	I will be (ser — simple future)
+Tu serás	You will be (ser — simple future, informal)
+Ele/Ela será	He/She will be (ser — simple future)
+Nós seremos	We will be (ser — simple future)
+Vocês serão	You all will be (ser — simple future)
+Eles/Elas serão	They will be (ser — simple future)
+Eu terei	I will have (ter — simple future)
+Tu terás	You will have (ter — simple future, informal)
+Ele/Ela terá	He/She will have (ter — simple future)
+Nós teremos	We will have (ter — simple future)
+Vocês terão	You all will have (ter — simple future)
+Eles/Elas terão	They will have (ter — simple future)
+Eu farei	I will do (fazer — simple future)
+Tu farás	You will do (fazer — simple future, informal)
+Ele/Ela fará	He/She will do (fazer — simple future)
+Nós faremos	We will do (fazer — simple future)
+Vocês farão	You all will do (fazer — simple future)
+Eles/Elas farão	They will do (fazer — simple future)
+Eu seria	I would be (ser — conditional)
+Tu serias	You would be (ser — conditional, informal)
+Ele/Ela seria	He/She would be (ser — conditional)
+Nós seríamos	We would be (ser — conditional)
+Vocês seriam	You all would be (ser — conditional)
+Eles/Elas seriam	They would be (ser — conditional)
+Eu teria	I would have (ter — conditional)
+Tu terias	You would have (ter — conditional, informal)
+Ele/Ela teria	He/She would have (ter — conditional)
+Nós teríamos	We would have (ter — conditional)
+Vocês teriam	You all would have (ter — conditional)
+Eles/Elas teriam	They would have (ter — conditional)
+Eu faria	I would do (fazer — conditional)
+Tu farias	You would do (fazer — conditional, informal)
+Ele/Ela faria	He/She would do (fazer — conditional)
+Nós faríamos	We would do (fazer — conditional)
+Vocês fariam	You all would do (fazer — conditional)
+Eles/Elas fariam	They would do (fazer — conditional)
+Sê	Be! (ser — imperative, tu)
+Está	Be! (estar — imperative, tu)
+Tem	Have! (ter — imperative, tu)
+Faz	Do/Make! (fazer — imperative, tu)
+Vai	Go! (ir — imperative, tu)
+Vem	Come! (vir — imperative, tu)
+Fala	Speak! (falar — imperative, tu)
+Come	Eat! (comer — imperative, tu)
+Bebe	Drink! (beber — imperative, tu)
+Lê	Read! (ler — imperative, tu)
+Escreve	Write! (escrever — imperative, tu)
+Abre	Open! (abrir — imperative, tu)
+Fecha	Close! (fechar — imperative, tu)
+Espera	Wait! (esperar — imperative, tu)
+Ajuda	Help! (ajudar — imperative, tu)
+Falado	Spoken (past participle of falar)
+Comido	Eaten (past participle of comer)
+Bebido	Drunk (past participle of beber)
+Feito	Done / Made (past participle of fazer — irregular)
+Ido	Gone (past participle of ir — irregular)
+Vindo	Come (past participle of vir — irregular)
+Posto	Put (past participle of pôr — irregular)
+Visto	Seen (past participle of ver — irregular)
+Dito	Said (past participle of dizer — irregular)
+Sido	Been (past participle of ser — irregular)
+Estado	Been (past participle of estar — irregular)
+Tido	Had (past participle of ter — irregular)
+Eu tenho falado	I have been speaking (present perfect)
+Eu tenho comido	I have been eating (present perfect)
+Eu tenho feito	I have been doing (present perfect)
+Eu tenho ido	I have been going (present perfect)
+Eu tenho estado	I have been (present perfect — estar)
+Ele tinha falado	He had spoken (pluperfect)
+Ela tinha comido	She had eaten (pluperfect)
+Nós tínhamos feito	We had done (pluperfect)
+Vocês tinham ido	You all had gone (pluperfect)
+Falando	Speaking (gerund of falar)
+Comendo	Eating (gerund of comer)
+Fazendo	Doing/Making (gerund of fazer)
+Indo	Going (gerund of ir)
+Sendo	Being (gerund of ser)
+Estando	Being (gerund of estar)
+Que eu seja	That I be (ser — present subjunctive)
+Que tu sejas	That you be (ser — present subjunctive, informal)
+Que ele seja	That he be (ser — present subjunctive)
+Que nós sejamos	That we be (ser — present subjunctive)
+Que vocês sejam	That you all be (ser — present subjunctive)
+Que eu esteja	That I be (estar — present subjunctive)
+Que tu estejas	That you be (estar — present subjunctive, informal)
+Que ele esteja	That he be (estar — present subjunctive)
+Que nós estejamos	That we be (estar — present subjunctive)
+Que vocês estejam	That you all be (estar — present subjunctive)
+Que eu tenha	That I have (ter — present subjunctive)
+Que tu tenhas	That you have (ter — present subjunctive, informal)
+Que ele tenha	That he have (ter — present subjunctive)
+Que nós tenhamos	That we have (ter — present subjunctive)
+Que vocês tenham	That you all have (ter — present subjunctive)
+Que eu faça	That I do (fazer — present subjunctive)
+Que eu vá	That I go (ir — present subjunctive)
+Que ele saiba	That he know (saber — present subjunctive)
+Que ela possa	That she can (poder — present subjunctive)
+Espero que estejas bem	I hope you are well (subjunctive in context)
+Quero que venhas	I want you to come (subjunctive in context)
+É importante que saibas	It's important that you know (subjunctive in context)
+Duvido que ele venha	I doubt he will come (subjunctive in context)
+Embora esteja cansado	Although I am tired (subjunctive with embora)
+Para que possas entender	So that you can understand (subjunctive with para que)
+Quando eu for	When I go (future subjunctive — ir)
+Quando tu fores	When you go (future subjunctive — ir, informal)
+Quando ele for	When he goes (future subjunctive — ir)
+Quando nós formos	When we go (future subjunctive — ir)
+Quando vocês forem	When you all go (future subjunctive — ir)
+Quando eu tiver	When I have (future subjunctive — ter)
+Quando tu tiveres	When you have (future subjunctive — ter, informal)
+Quando ele tiver	When he has (future subjunctive — ter)
+Quando nós tivermos	When we have (future subjunctive — ter)
+Quando vocês tiverem	When you all have (future subjunctive — ter)
+Quando eu puder	When I can (future subjunctive — poder)
+Quando eu souber	When I know (future subjunctive — saber)
+Quando eu vier	When I come (future subjunctive — vir)
+Quando eu fizer	When I do (future subjunctive — fazer)
+Se eu fosse	If I were (ser/ir — imperfect subjunctive)
+Se tu fosses	If you were (ser/ir — imperfect subjunctive, informal)
+Se ele fosse	If he were (ser/ir — imperfect subjunctive)
+Se nós fôssemos	If we were (ser/ir — imperfect subjunctive)
+Se vocês fossem	If you all were (ser/ir — imperfect subjunctive)
+Se eu tivesse	If I had (ter — imperfect subjunctive)
+Se tu tivesses	If you had (ter — imperfect subjunctive, informal)
+Se ele tivesse	If he had (ter — imperfect subjunctive)
+Se nós tivéssemos	If we had (ter — imperfect subjunctive)
+Se vocês tivessem	If you all had (ter — imperfect subjunctive)
+Se eu pudesse	If I could (poder — imperfect subjunctive)
+Se eu soubesse	If I knew (saber — imperfect subjunctive)
+Se eu quisesse	If I wanted (querer — imperfect subjunctive)
+Se eu fizesse	If I did (fazer — imperfect subjunctive)
+Se eu viesse	If I came (vir — imperfect subjunctive)
+Se fosse possível	If it were possible (common phrase)
+Eu gostaria de ir	I would like to go (conditional in context)
+Eu deveria estudar	I should study (conditional in context)
+Podias ajudar-me?	Could you help me? (conditional in context, informal)
