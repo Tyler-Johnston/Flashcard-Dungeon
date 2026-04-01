@@ -67,7 +67,20 @@ export class ImportComponent {
   readonly DIFFICULTIES = DIFFICULTIES;
 
   readonly heroSpriteUrl = (() => {
-    const keys = ['mutant_frog', 'goober', 'knight', 'mushroom', 'minotaur', 'lich', 'mimic', 'dragon'];
+  const keys = [
+    'mutant_frog',
+    'angry_chicken',
+    'knight',
+    'mad_mushroom',
+    'minotaur',
+    'lich',
+    'mimic',
+    'fang',
+    'dragon',
+    'orc',
+    'chicken_army',
+    'mutant_turtle',
+  ];
     const key = keys[Math.floor(Math.random() * keys.length)];
     const variant = Math.random() < 0.5 ? 'a' : 'b';
     return `sprites/${key}_${variant}.png`;

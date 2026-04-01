@@ -14,13 +14,13 @@ export class EnemyService {
       tier: 1,
       maxHp: 60,
       atk: 8,
-      ability: 'none',
+      ability: 'sticky-tongue',
       lootTable: ['potion', 'shield'],
     },
     {
-      id: 'goober',
-      name: 'Goober',
-      spriteKey: 'goober',
+      id: 'angry_chicken',
+      name: 'Angry Chicken',
+      spriteKey: 'angry_chicken',
       tier: 1,
       maxHp: 80,
       atk: 12,
@@ -39,8 +39,8 @@ export class EnemyService {
     },
     {
       id: 'mushroom',
-      name: 'Mushroom',
-      spriteKey: 'mushroom',
+      name: 'Mad Mushroom',
+      spriteKey: 'mad_mushroom',
       tier: 2,
       maxHp: 70,
       atk: 20,
@@ -78,6 +78,16 @@ export class EnemyService {
       lootTable: ['crit', 'crit', 'potion'],
     },
     {
+      id: 'fang',
+      name: 'Fang',
+      spriteKey: 'fang',
+      tier: 3,
+      maxHp: 110,
+      atk: 14,
+      ability: 'bleed',
+      lootTable: ['crit', 'potion', 'shield'],
+    },
+    {
       id: 'dragon',
       name: 'Dragon',
       spriteKey: 'dragon',
@@ -85,6 +95,36 @@ export class EnemyService {
       maxHp: 250,
       atk: 30,
       ability: 'enrage',
+      lootTable: [],
+    },
+    {
+      id: 'orc',
+      name: 'Orc Warlord',
+      spriteKey: 'orc',
+      tier: 'boss',
+      maxHp: 280,
+      atk: 25,
+      ability: 'taunt',
+      lootTable: [],
+    },
+    {
+      id: 'chicken_army',
+      name: 'Chicken Army',
+      spriteKey: 'chicken_army',
+      tier: 'boss',
+      maxHp: 200,
+      atk: 18,
+      ability: 'swarm',
+      lootTable: [],
+    },
+    {
+      id: 'mutant_turtle',
+      name: 'Mutant Turtle',
+      spriteKey: 'mutant_turtle',
+      tier: 'boss',
+      maxHp: 320,
+      atk: 22,
+      ability: 'shell',
       lootTable: [],
     },
   ];
@@ -117,7 +157,7 @@ export class EnemyService {
   // --- Room Progression ---
 
   getEnemyForRoom(room: number): Enemy {
-    if (room >= 4) return this.getBoss();
+    if (room >= 4) return this.getRandomBoss();
 
     const tierMap: Record<number, EnemyTier[]> = {
       1: [1],
@@ -133,8 +173,15 @@ export class EnemyService {
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
+  /** Returns a random boss enemy for variety across runs. */
+  getRandomBoss(): Enemy {
+    const bosses = this.enemies.filter(e => e.tier === 'boss');
+    return bosses[Math.floor(Math.random() * bosses.length)];
+  }
+
+  /** Legacy: kept for backwards compatibility. */
   getBoss(): Enemy {
-    return this.enemies.find(e => e.id === 'dragon')!;
+    return this.getRandomBoss();
   }
 
   // --- Loot ---
@@ -184,13 +231,18 @@ export class EnemyService {
   getAbilityDescription(enemy: Enemy): string {
     const map: Record<string, string> = {
       none: '',
+      'sticky-tongue': 'On Again, the card is swallowed and re-queued — you must answer it again immediately.',
       cram: 'Gains +3 ATK each time you rate Again.',
       revive: 'Revives once at 20 HP when defeated.',
       'suppress-crit': 'Easy answers only deal Good damage.',
       'troll-heal': 'Heals 15 HP whenever you rate Hard.',
       'soul-drain': 'Each Again permanently reduces your max HP by 5.',
       'no-mercy': 'Hard is treated the same as Again.',
+      bleed: 'Passively deals +5 bonus damage on every card rating, regardless of your answer.',
       enrage: 'Doubles ATK when below 50% HP.',
+      taunt: 'Forces your next 3 cards to be rated at Hard tier — Good and Easy damage is capped.',
+      swarm: 'Each Again summons a Chick: permanently grants +8 ATK (max 3 stacks).',
+      shell: 'Blocks the first hit of every other card. You must strike twice in a row to pierce it.',
     };
     return map[enemy.ability] ?? '';
   }

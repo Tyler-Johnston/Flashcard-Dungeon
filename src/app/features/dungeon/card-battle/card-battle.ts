@@ -10,6 +10,10 @@ const GOLD_PER_ROOM = 10;
 const GOLD_PER_UNIQUE_CARD = 1;
 const GOLD_VICTORY_BONUS = 25;
 
+// Hard-coded base damage values (before playerAtkMult scaling)
+const DMG_GOOD = 25;
+const DMG_EASY = 60;
+
 @Component({
   selector: 'app-card-battle',
   imports: [CommonModule, HpBarComponent],
@@ -43,6 +47,25 @@ export class CardBattle implements OnInit {
   readonly spriteVariant = signal<'a' | 'b'>('a');
   enemyInfoOpen = signal(false);
 
+  // ── New ability state signals ─────────────────────────────────────────────
+  /** Fang: passive bleed damage dealt every card regardless of rating. */
+  bleedDamage = signal(5);
+
+  /** Orc Warlord: number of cards remaining in taunt cycle (0 = not yet started). */
+  tauntCardsLeft = signal(0);
+
+  /** Chicken Army: number of chick stacks accumulated (+8 ATK each, max 3). */
+  swarmStacks = signal(0);
+
+  /**
+   * Mutant Turtle shell state.
+   * alternator increments on each card flip; shell is active on odd counts.
+   */
+  shellAlternator = signal(0);
+  shellActive = signal(false);
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   currentCard  = computed(() => this.queue()[this.currentIndex()]);
   hasCards     = computed(() => this.currentIndex() < this.queue().length);
   enemyHp      = computed(() => this.run()?.enemyHp ?? 0);
@@ -58,12 +81,15 @@ export class CardBattle implements OnInit {
     return `sprites/${enemy.spriteKey}_${this.spriteVariant()}.png`;
   });
 
-  // Effective ATK shown in popover — accounts for cram, enrage, and difficulty
+  /** Shell indicator for the template — true when turtle shell will block this card. */
+  readonly shellIsUp = computed(() => this.shellActive());
+
+  // Effective ATK shown in popover — accounts for cram, swarm, enrage, and difficulty
   effectiveAtk = computed(() => {
     const run = this.run();
     const enemy = this.currentEnemy();
     if (!run || !enemy) return 0;
-    let atk = enemy.atk + this.cramBonus();
+    let atk = enemy.atk + this.cramBonus() + (this.swarmStacks() * 8);
     if (run.activeEffects.includes('enraged')) atk *= 2;
     return Math.round(atk * (run.atkMult ?? 1));
   });
@@ -78,7 +104,33 @@ export class CardBattle implements OnInit {
   }
 
   flip() {
-    if (!this.flipped()) this.flipped.set(true);
+    if (this.flipped()) return;
+    this.flipped.set(true);
+    this.onCardReveal();
+  }
+
+  /** Called once per card reveal — handles pre-rating ability hooks. */
+  private onCardReveal() {
+    const run = this.run();
+    const enemy = run?.currentEnemy;
+    if (!enemy) return;
+
+    // Mutant Turtle — shell alternates each card
+    if (enemy.ability === 'shell') {
+      const next = this.shellAlternator() + 1;
+      this.shellAlternator.set(next);
+      const active = next % 2 === 1;
+      this.shellActive.set(active);
+      if (active) {
+        this.showStatus('Shell hardens — your hit is blocked this card!');
+      }
+      // no message when shell is down — silence is fine
+    }
+
+    // Orc Warlord — announce taunt on first reveal (taunt activates on first rating)
+    if (enemy.ability === 'taunt' && this.tauntCardsLeft() > 0) {
+      this.showStatus(`Taunted! Damage capped at Hard for ${this.tauntCardsLeft()} more card(s).`);
+    }
   }
 
   toggleEnemyInfo() {
@@ -100,83 +152,163 @@ export class CardBattle implements OnInit {
     const playerAtkMult = run.playerAtkMult ?? 1;
     const isEnraged = run.activeEffects.includes('enraged');
 
+    // ── Pre-rating ability overrides ──────────────────────────────────────
+
     if (enemy.ability === 'suppress-crit' && rating === Rating.Easy) {
       effectiveRating = Rating.Good;
       this.showStatus(`${enemy.name} suppresses your crit!`);
     }
+
     if (enemy.ability === 'no-mercy' && rating === Rating.Hard) {
       effectiveRating = Rating.Again;
       this.showStatus(`${enemy.name} shows no mercy — Hard treated as Again!`);
     }
 
+    // ── FSRS scheduling ───────────────────────────────────────────────────
+
     const updated = this.fsrs.grade(card, effectiveRating);
     await this.idb.saveCard(updated);
 
-    let playerDmg = 0;
-    let enemyDmg = 0;
+    // ── Damage calculation ────────────────────────────────────────────────
 
-    if (effectiveRating === Rating.Again) {
-      if (enemy.ability === 'cram') {
-        this.cramBonus.update(b => b + 3);
-        this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
-      }
-      if (enemy.ability === 'soul-drain') {
-        const newMaxHp = Math.max(0, run.maxHp - 5);
-        const newHp = Math.min(run.hp, newMaxHp);
-        await this.updateRun({ maxHp: newMaxHp, hp: newHp });
-        this.showStatus(`${enemy.name} drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
-        playerDmg = 0;
-      } else {
-        let baseAtk = enemy.atk + this.cramBonus();
-        if (isEnraged) baseAtk *= 2;
-        playerDmg = Math.round(baseAtk * atkMult);
-      }
-    } else if (effectiveRating === Rating.Hard) {
-      let baseAtk = enemy.atk;
-      if (isEnraged) baseAtk *= 2;
-      playerDmg = Math.round(Math.floor(baseAtk / 2) * atkMult);
+    const playerMissed = effectiveRating === Rating.Again;
+    let playerDmg = 0;  // damage enemy receives from player
+    let enemyDmg = 0;   // damage player receives from enemy
 
-      if (enemy.ability === 'troll-heal') {
-        const newEnemyHp = run.enemyHp + 15;
-        await this.updateRun({ enemyHp: newEnemyHp });
-        this.showStatus(`${enemy.name} heals 15 HP!`);
-      }
-    } else if (effectiveRating === Rating.Good) {
-      enemyDmg = Math.round(25 * playerAtkMult);
+    // Base player damage (enemy takes this)
+    if (effectiveRating === Rating.Good) {
+      playerDmg = Math.round(DMG_GOOD * playerAtkMult);
     } else if (effectiveRating === Rating.Easy) {
-      enemyDmg = Math.round(60 * playerAtkMult);
+      playerDmg = Math.round(DMG_EASY * playerAtkMult);
     }
 
-    // Crit scroll: upgrades Good damage to Easy-tier, still scaled by playerAtkMult
+    // Base enemy ATK (player takes this on Again; Hard = half)
+    const baseAtk = enemy.atk + this.cramBonus() + (this.swarmStacks() * 8);
+    const effectiveBaseAtk = isEnraged ? baseAtk * 2 : baseAtk;
+
+    if (effectiveRating === Rating.Again) {
+      enemyDmg = Math.round(effectiveBaseAtk * atkMult);
+    } else if (effectiveRating === Rating.Hard) {
+      enemyDmg = Math.round(Math.floor(effectiveBaseAtk / 2) * atkMult);
+    }
+
+    // ── Crit scroll: Good → Easy tier ────────────────────────────────────
+
     if (effectiveRating === Rating.Good && run.activeEffects.includes('crit')) {
-      enemyDmg = Math.round(60 * playerAtkMult);
+      playerDmg = Math.round(DMG_EASY * playerAtkMult);
       const newEffects = run.activeEffects.filter(e => e !== 'crit');
       await this.updateRun({ activeEffects: newEffects });
       this.showStatus('Iron Sword activates!');
     }
 
+    // ── Existing per-enemy ability side effects ───────────────────────────
+
+    if (effectiveRating === Rating.Again) {
+      // Angry Chicken: +3 ATK per Again
+      if (enemy.ability === 'cram') {
+        this.cramBonus.update(b => b + 3);
+        this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
+      }
+
+      // Lich: soul drain — reduce max HP
+      if (enemy.ability === 'soul-drain') {
+        const currentRun = this.run()!;
+        const newMaxHp = Math.max(0, currentRun.maxHp - 5);
+        const newHp = Math.min(currentRun.hp, newMaxHp);
+        await this.updateRun({ maxHp: newMaxHp, hp: newHp });
+        this.showStatus(`${enemy.name} drains your soul — max HP ${currentRun.maxHp} → ${newMaxHp}!`);
+        enemyDmg = 0; // soul-drain replaces normal atk damage
+      }
+    }
+
+    // Minotaur: heals on Hard
+    if (effectiveRating === Rating.Hard && enemy.ability === 'troll-heal') {
+      const currentRun = this.run()!;
+      const newEnemyHp = Math.min(enemy.maxHp, currentRun.enemyHp + 15);
+      await this.updateRun({ enemyHp: newEnemyHp });
+      this.showStatus(`🐂 ${enemy.name} heals 15 HP!`);
+    }
+
+    // ── NEW ability side effects ──────────────────────────────────────────
+
+    // Mutant Frog: sticky-tongue — re-queue card on Again
+    let requeueCard = false;
+    if (enemy.ability === 'sticky-tongue' && playerMissed) {
+      requeueCard = true;
+      this.showStatus(`Sticky Tongue! The Frog swallows your card — face it again!`);
+    }
+
+    // Fang: bleed — passive extra damage every card regardless of rating
+    if (enemy.ability === 'bleed') {
+      const bleed = this.bleedDamage();
+      enemyDmg += bleed;
+      this.showStatus(`Bleed! Fang inflicts ${bleed} bleed damage.`);
+    }
+
+    // Orc Warlord: taunt — cap Good/Easy damage to Hard tier every 3 cards
+    if (enemy.ability === 'taunt') {
+      // Activate on first card of the fight
+      if (this.tauntCardsLeft() === 0) {
+        this.tauntCardsLeft.set(3);
+      }
+      if (this.tauntCardsLeft() > 0 && (effectiveRating === Rating.Good || effectiveRating === Rating.Easy)) {
+        playerDmg = Math.round(Math.floor(DMG_GOOD * playerAtkMult)); // cap to Good tier
+        const remaining = this.tauntCardsLeft() - 1;
+        this.showStatus(`Taunted! Damage capped at Hard tier. (${remaining} card(s) left)`);
+      }
+      // Tick down; re-arm permanently every 3 cards
+      const next = this.tauntCardsLeft() - 1;
+      this.tauntCardsLeft.set(next <= 0 ? 3 : next);
+    }
+
+    // Chicken Army: swarm — +8 ATK per Again, max 3 stacks
+    if (enemy.ability === 'swarm' && playerMissed) {
+      if (this.swarmStacks() < 3) {
+        this.swarmStacks.update(s => s + 1);
+        const bonus = this.swarmStacks() * 8;
+        this.showStatus(`A Chick joins the fray! ATK +${bonus} (${this.swarmStacks()}/3 chicks).`);
+      } else {
+        this.showStatus('The swarm is maxed — full chick chaos!');
+      }
+    }
+
+    // Mutant Turtle: shell — block player damage on shell-active cards
+    if (enemy.ability === 'shell' && this.shellActive()) {
+      playerDmg = 0;
+      this.shellActive.set(false); // shell consumed until next toggle
+      this.showStatus('🐢 Shell absorbed the hit — no damage!');
+    }
+
+    // ── Shield item blocks incoming damage ────────────────────────────────
+
     let newInventory = [...run.inventory];
-    if (playerDmg > 0) {
+    if (enemyDmg > 0) {
       const shieldIdx = newInventory.findIndex(i => i.type === 'shield');
       if (shieldIdx !== -1) {
         newInventory.splice(shieldIdx, 1);
-        playerDmg = 0;
+        enemyDmg = 0;
         this.showStatus('Shield blocks the attack!');
       }
     }
 
-    const currentRun = this.run()!;
-    const newPlayerHp = Math.max(0, currentRun.hp - playerDmg);
-    let newEnemyHp = Math.max(0, currentRun.enemyHp - enemyDmg);
+    // ── Apply HP changes ──────────────────────────────────────────────────
 
-    if (playerDmg > 0) {
-      this.damage.set(-playerDmg);
+    const currentRun = this.run()!;
+    const newPlayerHp = Math.max(0, currentRun.hp - enemyDmg);
+    let newEnemyHp = Math.max(0, currentRun.enemyHp - playerDmg);
+
+    // ── Damage flash ──────────────────────────────────────────────────────
+
+    if (enemyDmg > 0) {
+      this.damage.set(-enemyDmg);
       this.damageTarget.set('player');
-    } else if (enemyDmg > 0) {
-      this.damage.set(enemyDmg);
+    } else if (playerDmg > 0) {
+      this.damage.set(playerDmg);
       this.damageTarget.set('enemy');
     }
     setTimeout(() => { this.damage.set(null); this.damageTarget.set(null); }, 800);
+
+    // ── Knight revive ─────────────────────────────────────────────────────
 
     const knightRevived = currentRun.activeEffects.includes('revive-used');
     if (enemy.ability === 'revive' && newEnemyHp <= 0 && !knightRevived) {
@@ -185,14 +317,26 @@ export class CardBattle implements OnInit {
       this.showStatus(`${enemy.name} revives at 20 HP!`);
     }
 
+    // ── Dragon / boss enrage ──────────────────────────────────────────────
+
     if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !currentRun.activeEffects.includes('enraged')) {
       await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'enraged'] });
       this.showStatus(`${enemy.name} enrages — ATK doubled!`);
     }
 
+    // ── Persist state ─────────────────────────────────────────────────────
+
     await this.updateRun({ hp: newPlayerHp, enemyHp: newEnemyHp, inventory: newInventory });
 
     this.flipped.set(false);
+
+    // Sticky-tongue: re-insert card at front of queue before advancing
+    if (requeueCard) {
+      const q = [...this.queue()];
+      q.splice(this.currentIndex() + 1, 0, card); // insert right after current position
+      this.queue.set(q);
+    }
+
     this.currentIndex.update(i => i + 1);
 
     if (newPlayerHp <= 0) { await this.endRun(false); return; }
@@ -210,19 +354,19 @@ export class CardBattle implements OnInit {
     switch (item.type) {
       case 'potion':
         updates.hp = Math.min(run.maxHp, run.hp + 30);
-        this.showStatus('Potion restores 30 HP!');
+        this.showStatus('🧪 Potion restores 30 HP!');
         break;
       case 'skip':
         this.flipped.set(false);
         this.currentIndex.update(i => i + 1);
-        this.showStatus('Bomb skips the current card!');
+        this.showStatus('💣 Bomb skips the current card!');
         break;
       case 'shield':
-        this.showStatus('Shield readied — next Again blocked!');
+        this.showStatus('🛡️ Shield readied — next hit blocked!');
         break;
       case 'crit':
         updates.activeEffects = [...run.activeEffects, 'crit'];
-        this.showStatus('Iron Sword ready — next Good = Easy damage!');
+        this.showStatus('⚔️ Iron Sword ready — next Good = Easy damage!');
         break;
     }
 
@@ -283,7 +427,14 @@ export class CardBattle implements OnInit {
     const scaledMaxHp = Math.round(nextEnemy.maxHp * hpMult);
     const scaledEnemy = { ...nextEnemy, maxHp: scaledMaxHp };
 
+    // Reset all per-enemy ability state
     this.cramBonus.set(0);
+    this.tauntCardsLeft.set(0);
+    this.swarmStacks.set(0);
+    this.shellAlternator.set(0);
+    this.shellActive.set(false);
+    this.bleedDamage.set(5);
+
     this.rollSpriteVariant();
     this.enemyInfoOpen.set(false);
 

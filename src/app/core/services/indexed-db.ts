@@ -13,7 +13,12 @@ export type EnemyAbility =
   | 'troll-heal'
   | 'soul-drain'
   | 'no-mercy'
-  | 'enrage';
+  | 'enrage'
+  | 'sticky-tongue'
+  | 'bleed'
+  | 'taunt'
+  | 'swarm'
+  | 'shell';
 
 export type ShopUpgradeId =
   | 'extra-hp'
