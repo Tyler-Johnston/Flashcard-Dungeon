@@ -18,8 +18,8 @@ const SHOP_ITEMS: ShopItem[] = [
     name: 'Vitality Potion',
     description: 'Start every run with +25 max HP.',
     cost: 50,
-    spriteCol: 0,
-    spriteRow: 0, // red potion
+    spriteCol: 3,
+    spriteRow: 0, // yellow potion
   },
   {
     id: 'starting-shield',
@@ -35,7 +35,7 @@ const SHOP_ITEMS: ShopItem[] = [
     description: 'Begin every run with a random item.',
     cost: 40,
     spriteCol: 0,
-    spriteRow: 7, // red gem ring
+    spriteRow: 4, // brown bag
   },
   {
     id: 'extra-inventory',
