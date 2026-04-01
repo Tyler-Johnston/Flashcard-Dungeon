@@ -21,7 +21,7 @@
       }
 
       <div class="run-over-actions">
-        <button class="btn good" (click)="playAgain()">▶ Play Again</button>
+        <button class="btn good" (click)="playAgain()">▶︎ Play Again</button>
         <button class="btn hard" (click)="goBack()">← Back to Decks</button>
       </div>
     </div>
@@ -38,7 +38,7 @@
             <span class="item-name">{{ item.name }}</span>
             <span class="item-desc">{{ item.description }}</span>
 
-            @if (inventory().length >= INVENTORY_CAP) {
+            @if (inventory().length >= inventoryCap()) {
               <p class="cap-warning">Inventory full — discard one to take this</p>
               <div class="discard-list">
                 @for (inv of inventory(); track inv.id) {
@@ -136,7 +136,7 @@
 
     @if (inventory().length > 0) {
       <div class="inventory">
-        <span class="inv-label">Inventory ({{ inventory().length }}/{{ INVENTORY_CAP }})</span>
+        <span class="inv-label">Inventory ({{ inventory().length }}/{{ inventoryCap() }})</span>
         <div class="inv-items">
           @for (item of inventory(); track item.id) {
             <button class="inv-item" (click)="useItem(item)" [title]="item.description">

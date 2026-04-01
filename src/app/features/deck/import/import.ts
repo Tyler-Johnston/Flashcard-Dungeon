@@ -1,11 +1,14 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DeckImportService } from '../../../core/services/deck-import';
-import { IndexedDbService, Deck, Card } from '../../../core/services/indexed-db';
+import { IndexedDbService, Deck, Card, Item } from '../../../core/services/indexed-db';
 import { Router } from '@angular/router';
 import { EnemyService } from '../../../core/services/enemy';
 
 const MASTERED_DAYS = 21;
+const BASE_INVENTORY_CAP = 5;
+const BASE_LOOT_CHANCE = 0.7;
+const UPGRADED_LOOT_CHANCE = 0.85;
 
 export interface DeckStats {
   deck: Deck;
@@ -159,24 +162,68 @@ export class ImportComponent {
       return;
     }
 
+    // Load profile to check owned upgrades
+    const profile = await this.idb.getProfile();
+    const has = (id: Parameters<typeof this.idb.hasUpgrade>[1]) =>
+      this.idb.hasUpgrade(profile, id);
+
+    // ── Apply upgrades ──────────────────────────────────────────────────────
+
+    // Extra HP: +25 max HP
+    const maxHp = has('extra-hp') ? 125 : 100;
+
+    // Inventory cap: 6 instead of 5
+    const inventoryCap = has('extra-inventory')
+      ? BASE_INVENTORY_CAP + 1
+      : BASE_INVENTORY_CAP;
+
+    // Starting inventory
+    const startingInventory: Item[] = [];
+
+    // Starting shield: always begin with a shield
+    if (has('starting-shield')) {
+      startingInventory.push(this.enemyService.makeItem('shield'));
+    }
+
+    // Random item: begin with one random item (won't duplicate the shield slot)
+    if (has('random-item')) {
+      const itemTypes: Array<'potion' | 'skip' | 'shield' | 'crit'> =
+        ['potion', 'skip', 'shield', 'crit'];
+      // Avoid adding a second shield if starting-shield is also active
+      const pool = has('starting-shield')
+        ? itemTypes.filter(t => t !== 'shield')
+        : itemTypes;
+      const randomType = pool[Math.floor(Math.random() * pool.length)];
+      startingInventory.push(this.enemyService.makeItem(randomType));
+    }
+
+    // Clamp inventory to cap (shouldn't exceed it but just in case)
+    const inventory = startingInventory.slice(0, inventoryCap);
+
+    // Better loot: stored on RunState as an activeEffect so card-battle reads it
+    const activeEffects: string[] = has('better-loot') ? ['better-loot'] : [];
+
+    // ── Save run state ──────────────────────────────────────────────────────
+
     const firstEnemy = this.enemyService.getEnemyForRoom(1);
     await this.idb.saveRunState({
       id: 'current',
       deckId: stats.deck.id,
-      hp: 100,
-      maxHp: 100,
+      hp: maxHp,
+      maxHp,
       currentRoom: 1,
       totalRooms: 3,
       currentEnemy: firstEnemy,
       enemyHp: firstEnemy.maxHp,
       consecutiveAgain: 0,
       cardQueue: cards.map(c => c.id),
-      inventory: [],
-      activeEffects: [],
+      inventory,
+      activeEffects,
       powerups: [],
       startedAt: Date.now(),
       roomsCleared: 0,
       uniqueCardsReviewed: [],
+      inventoryCap,
     });
 
     this.router.navigate(['/dungeon']);

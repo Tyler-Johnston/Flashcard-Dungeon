@@ -23,7 +23,6 @@ export class CardBattle implements OnInit {
   private router = inject(Router);
 
   readonly Rating = Rating;
-  readonly INVENTORY_CAP = 5;
 
   run = signal<RunState | null>(null);
   queue = signal<Card[]>([]);
@@ -38,7 +37,6 @@ export class CardBattle implements OnInit {
   lootOffer = signal<Item[] | null>(null);
   pendingNextRoom = signal(false);
   statusMessage = signal<string | null>(null);
-
   goldEarned = signal(0);
 
   cramBonus = signal(0);
@@ -51,21 +49,7 @@ export class CardBattle implements OnInit {
   inventory = computed(() => this.run()?.inventory ?? []);
   currentEnemy = computed(() => this.run()?.currentEnemy ?? null);
   currentRoom = computed(() => this.run()?.currentRoom ?? 1);
-
-  // ✅ NEW: unified attack calculation
-  effectiveAtk = computed(() => {
-    const enemy = this.currentEnemy();
-    const run = this.run();
-    if (!enemy || !run) return 0;
-
-    let atk = enemy.atk + this.cramBonus();
-
-    if (run.activeEffects.includes('enraged')) {
-      atk *= 2;
-    }
-
-    return atk;
-  });
+  inventoryCap = computed(() => this.run()?.inventoryCap ?? 5);
 
   readonly spriteUrl = computed(() => {
     const enemy = this.currentEnemy();
@@ -94,6 +78,7 @@ export class CardBattle implements OnInit {
     const run = this.run();
     if (!card || !this.flipped() || !run) return;
 
+    // Track unique cards reviewed
     if (!run.uniqueCardsReviewed.includes(card.id)) {
       await this.updateRun({
         uniqueCardsReviewed: [...run.uniqueCardsReviewed, card.id],
@@ -117,39 +102,30 @@ export class CardBattle implements OnInit {
 
     let playerDmg = 0;
     let enemyDmg = 0;
-    let ignoreDmg = false;
 
     if (effectiveRating === Rating.Again) {
-      // Enemy-specific effects
       if (enemy.ability === 'cram') {
         this.cramBonus.update(b => b + 3);
-        this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${this.effectiveAtk()})`);
-        ignoreDmg = true;
+        this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
       }
-
       if (enemy.ability === 'soul-drain') {
         const newMaxHp = Math.max(0, run.maxHp - 5);
         const newHp = Math.min(run.hp, newMaxHp);
         await this.updateRun({ maxHp: newMaxHp, hp: newHp });
         this.showStatus(`${enemy.name} drains your soul — max HP ${run.maxHp} → ${newMaxHp}!`);
+        playerDmg = 0;
+      } else {
+        playerDmg = enemy.atk + this.cramBonus();
       }
-
-      // Apply standard damage to player
-      if (!ignoreDmg)
-        playerDmg = Math.floor(this.effectiveAtk());
-
     } else if (effectiveRating === Rating.Hard) {
-      playerDmg = Math.floor(this.effectiveAtk() / 2);
-
+      playerDmg = Math.floor(enemy.atk / 2);
       if (enemy.ability === 'troll-heal') {
         const newEnemyHp = Math.min(enemy.maxHp, run.enemyHp + 15);
         await this.updateRun({ enemyHp: newEnemyHp });
         this.showStatus(`${enemy.name} heals 15 HP!`);
       }
-
     } else if (effectiveRating === Rating.Good) {
       enemyDmg = 25;
-
     } else if (effectiveRating === Rating.Easy) {
       enemyDmg = 60;
     }
@@ -182,28 +158,17 @@ export class CardBattle implements OnInit {
       this.damage.set(enemyDmg);
       this.damageTarget.set('enemy');
     }
-    setTimeout(() => {
-      this.damage.set(null);
-      this.damageTarget.set(null);
-    }, 800);
+    setTimeout(() => { this.damage.set(null); this.damageTarget.set(null); }, 800);
 
     const knightRevived = currentRun.activeEffects.includes('revive-used');
     if (enemy.ability === 'revive' && newEnemyHp <= 0 && !knightRevived) {
       newEnemyHp = 20;
-      await this.updateRun({
-        activeEffects: [...currentRun.activeEffects, 'revive-used'],
-      });
+      await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'revive-used'] });
       this.showStatus(`${enemy.name} revives at 20 HP!`);
     }
 
-    if (
-      enemy.ability === 'enrage' &&
-      newEnemyHp <= enemy.maxHp / 2 &&
-      !currentRun.activeEffects.includes('enraged')
-    ) {
-      await this.updateRun({
-        activeEffects: [...currentRun.activeEffects, 'enraged'],
-      });
+    if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !currentRun.activeEffects.includes('enraged')) {
+      await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'enraged'] });
       this.showStatus(`${enemy.name} enrages — ATK doubled!`);
     }
 
@@ -265,10 +230,11 @@ export class CardBattle implements OnInit {
     const run = this.run();
     if (!run) return;
 
-    // Increment rooms cleared
     await this.updateRun({ roomsCleared: run.roomsCleared + 1 });
 
-    const offer = this.enemyService.rollLoot(run.currentEnemy);
+    // Use better-loot drop chance if upgrade is active
+    const lootThreshold = run.activeEffects.includes('better-loot') ? 0.85 : 0.7;
+    const offer = this.enemyService.rollLootWithChance(run.currentEnemy, lootThreshold);
     if (offer) {
       this.lootOffer.set(offer);
       this.pendingNextRoom.set(true);
@@ -280,7 +246,7 @@ export class CardBattle implements OnInit {
   async takeLoot(item: Item) {
     const run = this.run();
     if (!run) return;
-    if (run.inventory.length >= this.INVENTORY_CAP) return;
+    if (run.inventory.length >= this.inventoryCap()) return;
     await this.updateRun({ inventory: [...run.inventory, item] });
     this.lootOffer.set(null);
     await this.advanceRoom();
@@ -322,7 +288,7 @@ export class CardBattle implements OnInit {
       currentEnemy: nextEnemy,
       enemyHp: nextEnemy.maxHp,
       consecutiveAgain: 0,
-      activeEffects: [],
+      activeEffects: run.activeEffects.filter(e => e === 'better-loot'), // preserve upgrade effects
       cardQueue: cards.map(c => c.id),
     });
 
@@ -336,7 +302,6 @@ export class CardBattle implements OnInit {
     const run = this.run();
     if (!run) return;
 
-    // Calculate gold
     const roomGold = run.roomsCleared * GOLD_PER_ROOM;
     const cardGold = run.uniqueCardsReviewed.length * GOLD_PER_UNIQUE_CARD;
     const victoryBonus = isVictory ? GOLD_VICTORY_BONUS : 0;

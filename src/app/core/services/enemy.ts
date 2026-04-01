@@ -113,15 +113,9 @@ export class EnemyService {
       description: 'Your next Good answer deals Easy damage instead.',
     },
   };
+
   // --- Room Progression ---
 
-  /**
-   * Returns a random enemy appropriate for the given room number.
-   * Room 1 → tier 1
-   * Room 2 → tier 1–2
-   * Room 3 → tier 2–3
-   * Room 4 → boss
-   */
   getEnemyForRoom(room: number): Enemy {
     if (room >= 4) return this.getBoss();
 
@@ -145,15 +139,15 @@ export class EnemyService {
 
   // --- Loot ---
 
-  /**
-   * 70% chance to offer loot after defeating an enemy.
-   * Returns 3 random items drawn from the enemy's loot table,
-   * or null if the roll fails.
-   */
+  /** Default 70% loot roll. */
   rollLoot(enemy: Enemy): Item[] | null {
-    if (Math.random() > 0.7) return null;
-    if (enemy.lootTable.length === 0) return null;
+    return this.rollLootWithChance(enemy, 0.7);
+  }
 
+  /** Loot roll with configurable drop chance — used by better-loot upgrade (85%). */
+  rollLootWithChance(enemy: Enemy, chance: number): Item[] | null {
+    if (Math.random() > chance) return null;
+    if (enemy.lootTable.length === 0) return null;
     const picks = this.pickFromTable(enemy.lootTable, 3);
     return picks.map(type => this.makeItem(type));
   }
@@ -177,7 +171,6 @@ export class EnemyService {
       results.push(pool[idx]);
       pool.splice(idx, 1);
 
-      // Refill if pool runs dry and we need more picks
       if (pool.length === 0 && i < count - 1) {
         pool.push(...table);
       }

@@ -89,6 +89,7 @@ export interface RunState {
   startedAt: number;
   roomsCleared: number;
   uniqueCardsReviewed: string[];
+  inventoryCap: number;
 }
 
 // --- IDB Schema ---
@@ -151,7 +152,8 @@ export class IndexedDbService {
 
   async getProfile(): Promise<PlayerProfile> {
     const profile = await this.db.get('profile', 'player');
-    return profile ?? { id: 'player', gold: 0, upgrades: [] };
+    if (!profile) return { id: 'player', gold: 0, upgrades: [] };
+    return { ...profile, upgrades: profile.upgrades ?? [] };
   }
 
   async addGold(amount: number): Promise<PlayerProfile> {
@@ -164,7 +166,7 @@ export class IndexedDbService {
   async purchaseUpgrade(upgradeId: ShopUpgradeId, cost: number): Promise<PlayerProfile | null> {
     const profile = await this.getProfile();
     if (profile.gold < cost) return null;
-    if (profile.upgrades.includes(upgradeId)) return profile; // already owned
+    if (profile.upgrades.includes(upgradeId)) return profile;
     const updated: PlayerProfile = {
       ...profile,
       gold: profile.gold - cost,
