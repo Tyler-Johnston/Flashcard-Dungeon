@@ -21,8 +21,10 @@
       "updateMode": "prefetch",
       "resources": {
         "files": [
+          "/icons/**",
           "/sprites/**",
           "/assets/**",
+          "/decks/**",
           "/**/*.png",
           "/**/*.jpg",
           "/**/*.webp",
