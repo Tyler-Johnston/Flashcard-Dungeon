@@ -23,7 +23,7 @@
     <div class="nemesis-banner">
       <img
         class="nemesis-sprite"
-        [src]="'sprites/' + nem.id + '_a.png'"
+        [src]="spriteUrl(nem.id)"
         [alt]="nem.name"
         draggable="false"
       />
@@ -103,9 +103,9 @@
         </div>
         <div class="rating-legend">
           <span class="leg-item leg-again">Again {{ rd.again }}%</span>
-          <span class="leg-item leg-hard"> Hard  {{ rd.hard  }}%</span>
-          <span class="leg-item leg-good"> Good  {{ rd.good  }}%</span>
-          <span class="leg-item leg-easy"> Easy  {{ rd.easy  }}%</span>
+          <span class="leg-item leg-hard">Hard {{ rd.hard }}%</span>
+          <span class="leg-item leg-good">Good {{ rd.good }}%</span>
+          <span class="leg-item leg-easy">Easy {{ rd.easy }}%</span>
         </div>
       </div>
     }
@@ -130,7 +130,7 @@
         <span class="list-title">Most Defeated</span>
         @for (entry of topKills(); track entry.id) {
           <div class="enemy-kill-row">
-            <img class="enemy-kill-sprite" [src]="'sprites/' + entry.id + '_a.png'" [alt]="entry.name" draggable="false" />
+            <img class="enemy-kill-sprite" [src]="spriteUrl(entry.id)" [alt]="entry.name" draggable="false" />
             <span class="enemy-kill-name">{{ entry.name }}</span>
             <span class="enemy-kill-count">{{ entry.kills }}×</span>
           </div>
@@ -143,7 +143,7 @@
         <span class="list-title">Killed You Most</span>
         @for (entry of topKillers(); track entry.id) {
           <div class="enemy-kill-row">
-            <img class="enemy-kill-sprite" [src]="'sprites/' + entry.id + '_a.png'" [alt]="entry.name" draggable="false" />
+            <img class="enemy-kill-sprite" [src]="spriteUrl(entry.id)" [alt]="entry.name" draggable="false" />
             <span class="enemy-kill-name">{{ entry.name }}</span>
             <span class="enemy-kill-count nemesis-count">{{ entry.deaths }}×</span>
           </div>

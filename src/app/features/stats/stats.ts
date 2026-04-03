@@ -18,6 +18,21 @@ const ENEMY_NAMES: Record<string, string> = {
   mutant_turtle: 'Mutant Turtle',
 };
 
+const ENEMY_SPRITE_KEYS: Record<string, string> = {
+  frog:          'mutant_frog',
+  angry_chicken: 'angry_chicken',
+  knight:        'knight',
+  mushroom:      'mad_mushroom',
+  minotaur:      'minotaur',
+  lich:          'lich',
+  mimic:         'mimic',
+  fang:          'fang',
+  dragon:        'dragon',
+  orc:           'orc',
+  chicken_army:  'chicken_army',
+  turtle:        'mutant_turtle',
+};
+
 const ITEM_NAMES: Record<string, string> = {
   potion: 'Health Potion',
   shield: 'Iron Shield',
@@ -119,6 +134,11 @@ export class StatsComponent implements OnInit {
     const profile = await this.idb.getProfile();
     this.stats.set({ ...defaultStats(), ...(profile.stats ?? {}) });
     this.gold.set(profile.gold ?? 0);
+  }
+
+  spriteUrl(enemyId: string): string {
+    const key = ENEMY_SPRITE_KEYS[enemyId] ?? enemyId;
+    return `sprites/${key}_a.png`;
   }
 
   goBack() { this.router.navigate(['/deck']); }
