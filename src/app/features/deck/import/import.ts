@@ -260,6 +260,7 @@ export class ImportComponent {
 
   newDeck()  { this.router.navigate(['/editor']); }
   goShop()   { this.router.navigate(['/shop']); }
+  goStats()  { this.router.navigate(['/stats']); }
 
   async startRun(stats: DeckStats) {
     const cards = await this.idb.getDueCards(stats.deck.id);

@@ -96,14 +96,14 @@
   </div>
 
   <!-- Toolbar -->
-  <div class="deck-toolbar">
+<div class="deck-toolbar">
     <button class="shop-btn" (click)="goShop()">⚑ Shop</button>
+    <button class="shop-btn" (click)="goStats()">Stats</button>
     <div class="gold-display">
       <span class="gold-coin"></span>
       <span class="gold-amount">{{ gold() }}</span>
     </div>
   </div>
-
   <!-- Status message -->
   @if (status() !== 'idle') {
     <div class="message"

@@ -4,13 +4,13 @@ import { Router } from '@angular/router';
 import { IndexedDbService, Card, RunState, Item } from '../../../core/services/indexed-db';
 import { FsrsService, Rating } from '../../../core/services/fsrs';
 import { EnemyService } from '../../../core/services/enemy';
+import { StatsService } from '../../../core/services/stats.service';
 import { HpBarComponent } from '../../../shared/components/hp-bar/hp-bar';
 
 const GOLD_PER_ROOM = 10;
 const GOLD_PER_UNIQUE_CARD = 1;
 const GOLD_VICTORY_BONUS = 25;
 
-// Hard-coded base damage values (before playerAtkMult scaling)
 const DMG_GOOD = 15;
 const DMG_EASY = 30;
 
@@ -24,6 +24,7 @@ export class CardBattle implements OnInit {
   private idb = inject(IndexedDbService);
   private fsrs = inject(FsrsService);
   protected enemyService = inject(EnemyService);
+  private statsService = inject(StatsService);
   private router = inject(Router);
 
   readonly Rating = Rating;
@@ -47,24 +48,11 @@ export class CardBattle implements OnInit {
   readonly spriteVariant = signal<'a' | 'b'>('a');
   enemyInfoOpen = signal(false);
 
-  // ── New ability state signals ─────────────────────────────────────────────
-  /** Fang: passive bleed damage dealt every card regardless of rating. */
   bleedDamage = signal(5);
-
-  /** Orc Warlord: number of cards remaining in warcry cycle (0 = not yet started). */
   warcryCounter = signal(0);
-
-  /** Chicken Army: number of chick stacks accumulated (+8 ATK each, max 3). */
   swarmStacks = signal(0);
-
-  /**
-   * Mutant Turtle shell state.
-   * alternator increments on each card flip; shell is active on odd counts.
-   */
   shellAlternator = signal(0);
   shellActive = signal(false);
-
-  // ─────────────────────────────────────────────────────────────────────────
 
   currentCard  = computed(() => this.queue()[this.currentIndex()]);
   hasCards     = computed(() => this.currentIndex() < this.queue().length);
@@ -81,10 +69,8 @@ export class CardBattle implements OnInit {
     return `sprites/${enemy.spriteKey}_${this.spriteVariant()}.png`;
   });
 
-  /** Shell indicator for the template — true when turtle shell will block this card. */
   readonly shellIsUp = computed(() => this.shellActive());
 
-  // Effective ATK shown in popover — accounts for cram, swarm, enrage, and difficulty
   effectiveAtk = computed(() => {
     const run = this.run();
     const enemy = this.currentEnemy();
@@ -101,13 +87,15 @@ export class CardBattle implements OnInit {
     this.queue.set(cards);
     this.run.set(run);
     this.rollSpriteVariant();
+
+    // ── Record run started ───────────────────────────────────────────────
+    await this.statsService.recordRunStarted();
   }
 
   flip() {
     if (this.flipped()) return;
     this.flipped.set(true);
 
-    // Mutant Turtle — toggle shell state silently on each flip
     const enemy = this.run()?.currentEnemy;
     if (enemy?.ability === 'shell') {
       const next = this.shellAlternator() + 1;
@@ -155,17 +143,15 @@ export class CardBattle implements OnInit {
     // ── Damage calculation ────────────────────────────────────────────────
 
     const playerMissed = effectiveRating === Rating.Again;
-    let playerDmg = 0;  // damage enemy receives from player
-    let enemyDmg = 0;   // damage player receives from enemy
+    let playerDmg = 0;
+    let enemyDmg = 0;
 
-    // Base player damage (enemy takes this)
     if (effectiveRating === Rating.Good) {
       playerDmg = Math.round(DMG_GOOD * playerAtkMult);
     } else if (effectiveRating === Rating.Easy) {
       playerDmg = Math.round(DMG_EASY * playerAtkMult);
     }
 
-    // Base enemy ATK (player takes this on Again; Hard = half)
     const baseAtk = enemy.atk + this.cramBonus() + (this.swarmStacks() * 8);
     const effectiveBaseAtk = isEnraged ? baseAtk * 2 : baseAtk;
 
@@ -175,7 +161,7 @@ export class CardBattle implements OnInit {
       enemyDmg = Math.round(Math.floor(effectiveBaseAtk / 2) * atkMult);
     }
 
-    // ── Crit scroll: Good → Easy tier ────────────────────────────────────
+    // ── Crit scroll ───────────────────────────────────────────────────────
 
     if (effectiveRating === Rating.Good && run.activeEffects.includes('crit')) {
       playerDmg = Math.round(DMG_EASY * playerAtkMult);
@@ -184,27 +170,24 @@ export class CardBattle implements OnInit {
       this.showStatus('Iron Sword activates!');
     }
 
-    // ── Existing per-enemy ability side effects ───────────────────────────
+    // ── Per-enemy ability side effects ────────────────────────────────────
 
     if (effectiveRating === Rating.Again) {
-      // Angry Chicken: +3 ATK per Again
       if (enemy.ability === 'cram') {
         this.cramBonus.update(b => b + 3);
         this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
       }
 
-      // Lich: soul drain — reduce max HP
       if (enemy.ability === 'soul-drain') {
         const currentRun = this.run()!;
         const newMaxHp = Math.max(0, currentRun.maxHp - 5);
         const newHp = Math.min(currentRun.hp, newMaxHp);
         await this.updateRun({ maxHp: newMaxHp, hp: newHp });
         this.showStatus(`${enemy.name} drains your soul — max HP ${currentRun.maxHp} → ${newMaxHp}!`);
-        enemyDmg = 0; // soul-drain replaces normal atk damage
+        enemyDmg = 0;
       }
     }
 
-    // Minotaur: heals on Hard
     if (effectiveRating === Rating.Hard && enemy.ability === 'troll-heal') {
       const currentRun = this.run()!;
       const newEnemyHp = Math.min(enemy.maxHp, currentRun.enemyHp + 15);
@@ -212,23 +195,18 @@ export class CardBattle implements OnInit {
       this.showStatus(`🐂 ${enemy.name} heals 15 HP!`);
     }
 
-    // ── NEW ability side effects ──────────────────────────────────────────
-
-    // Mutant Frog: sticky-tongue — re-queue card on Again
     let requeueCard = false;
     if (enemy.ability === 'sticky-tongue' && playerMissed) {
       requeueCard = true;
       this.showStatus(`Sticky Tongue! The Frog swallows your card — face it again!`);
     }
 
-    // Fang: bleed — passive extra damage every card regardless of rating
     if (enemy.ability === 'bleed') {
       const bleed = this.bleedDamage();
       enemyDmg += bleed;
       this.showStatus(`Bleed! Fang inflicts ${bleed} bleed damage.`);
     }
 
-    // Orc Warlord: taunt — cap Good/Easy damage to Hard tier every 3 cards
     if (enemy.ability === 'warcry') {
       const next = this.warcryCounter() + 1;
       this.warcryCounter.set(next);
@@ -238,7 +216,6 @@ export class CardBattle implements OnInit {
       }
     }
 
-    // Chicken Army: swarm — +8 ATK per Again, max 3 stacks
     if (enemy.ability === 'swarm' && playerMissed) {
       if (this.swarmStacks() < 3) {
         this.swarmStacks.update(s => s + 1);
@@ -249,14 +226,13 @@ export class CardBattle implements OnInit {
       }
     }
 
-    // Mutant Turtle: shell — block player damage on shell-active cards
     if (enemy.ability === 'shell' && this.shellActive()) {
       playerDmg = 0;
-      this.shellActive.set(false); // shell consumed until next toggle
+      this.shellActive.set(false);
       this.showStatus('Shell absorbed the hit — no damage!');
     }
 
-    // ── Shield item blocks incoming damage ────────────────────────────────
+    // ── Shield item ───────────────────────────────────────────────────────
 
     let newInventory = [...run.inventory];
     if (enemyDmg > 0) {
@@ -294,7 +270,7 @@ export class CardBattle implements OnInit {
       this.showStatus(`${enemy.name} revives at 20 HP!`);
     }
 
-    // ── Dragon / boss enrage ──────────────────────────────────────────────
+    // ── Dragon enrage ─────────────────────────────────────────────────────
 
     if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !currentRun.activeEffects.includes('enraged')) {
       await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'enraged'] });
@@ -305,12 +281,25 @@ export class CardBattle implements OnInit {
 
     await this.updateRun({ hp: newPlayerHp, enemyHp: newEnemyHp, inventory: newInventory });
 
+    // ── Record card rated ─────────────────────────────────────────────────
+    const ratingKey = (
+      effectiveRating === Rating.Again ? 'again' :
+      effectiveRating === Rating.Hard  ? 'hard'  :
+      effectiveRating === Rating.Good  ? 'good'  : 'easy'
+    ) as 'again' | 'hard' | 'good' | 'easy';
+
+    await this.statsService.recordCardRated({
+      rating:       ratingKey,
+      cardId:       card.id,
+      damageDealt:  playerDmg,
+      damageTaken:  enemyDmg,
+    });
+
     this.flipped.set(false);
 
-    // Sticky-tongue: re-insert card at front of queue before advancing
     if (requeueCard) {
       const q = [...this.queue()];
-      q.splice(this.currentIndex() + 1, 0, card); // insert right after current position
+      q.splice(this.currentIndex() + 1, 0, card);
       this.queue.set(q);
     }
 
@@ -349,6 +338,9 @@ export class CardBattle implements OnInit {
 
     updates.inventory = newInventory;
     await this.updateRun(updates);
+
+    // ── Record item used ──────────────────────────────────────────────────
+    await this.statsService.recordItemUsed(item.type);
   }
 
   async handleEnemyDefeated() {
@@ -356,6 +348,9 @@ export class CardBattle implements OnInit {
     if (!run) return;
 
     await this.updateRun({ roomsCleared: run.roomsCleared + 1 });
+
+    // ── Record enemy defeated ─────────────────────────────────────────────
+    await this.statsService.recordEnemyDefeated(run.currentEnemy.id);
 
     const lootChance = run.activeEffects.includes('better-loot') ? 0.85 : 0.7;
     const offer = this.enemyService.rollLootWithChance(run.currentEnemy, lootChance);
@@ -404,7 +399,6 @@ export class CardBattle implements OnInit {
     const scaledMaxHp = Math.round(nextEnemy.maxHp * hpMult);
     const scaledEnemy = { ...nextEnemy, maxHp: scaledMaxHp };
 
-    // Reset all per-enemy ability state
     this.cramBonus.set(0);
     this.warcryCounter.set(0);
     this.swarmStacks.set(0);
@@ -443,6 +437,19 @@ export class CardBattle implements OnInit {
     if (total > 0) {
       await this.idb.addGold(total);
       this.goldEarned.set(total);
+    }
+
+    // ── Record run outcome ────────────────────────────────────────────────
+    if (isVictory) {
+      const deck = (await this.idb.getAllDecks()).find(d => d.id === run.deckId);
+      await this.statsService.recordRunWon({
+        roomsCleared: run.roomsCleared,
+        difficulty:   run.difficulty,
+        deckName:     deck?.name ?? 'Unknown',
+        goldEarned:   total,
+      });
+    } else {
+      await this.statsService.recordRunLost(run.currentEnemy.id);
     }
 
     this.victory.set(isVictory);

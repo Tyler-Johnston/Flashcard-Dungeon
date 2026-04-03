@@ -16,7 +16,7 @@ export type EnemyAbility =
   | 'enrage'
   | 'sticky-tongue'
   | 'bleed'
-  | 'warcry'   // was 'taunt'
+  | 'warcry'
   | 'swarm'
   | 'shell';
 
@@ -44,8 +44,8 @@ export const DIFFICULTIES: DifficultyConfig[] = [
     id: 'novice',
     label: 'Novice',
     totalRooms: 3,
-    atkMult: 0.85,       // enemies deal less damage
-    playerAtkMult: 0.6,  // player also deals less — fights last longer
+    atkMult: 0.85,
+    playerAtkMult: 0.6,
     hpMult: 1.0,
     goldMult: 0.75,
   },
@@ -78,12 +78,67 @@ export const DIFFICULTIES: DifficultyConfig[] = [
   },
 ];
 
+// --- Stats ---
+
+export interface PlayerStats {
+  // Runs
+  runsStarted:  number;
+  runsWon:      number;
+  runsLost:     number;
+
+  // Combat
+  enemiesDefeated:  Record<string, number>;  // keyed by enemy id
+  enemiesKilledBy:  Record<string, number>;  // keyed by enemy id
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+  itemsUsed:        Record<string, number>;  // keyed by item type
+
+  // Cards
+  totalReviews: number;
+  ratingCounts: { again: number; hard: number; good: number; easy: number };
+  hardestCards: Array<{ cardId: string; againCount: number }>;
+
+  // Progress
+  totalGoldEarned: number;
+  studyStreakDays:  number;
+  longestStreak:   number;
+  lastStudiedDate: string;  // "YYYY-MM-DD"
+  bestRun: {
+    roomsCleared: number;
+    difficulty:   string;
+    deckName:     string;
+    date:         number;
+  } | null;
+}
+
+export function defaultStats(): PlayerStats {
+  return {
+    runsStarted:      0,
+    runsWon:          0,
+    runsLost:         0,
+    enemiesDefeated:  {},
+    enemiesKilledBy:  {},
+    totalDamageDealt: 0,
+    totalDamageTaken: 0,
+    itemsUsed:        {},
+    totalReviews:     0,
+    ratingCounts:     { again: 0, hard: 0, good: 0, easy: 0 },
+    hardestCards:     [],
+    totalGoldEarned:  0,
+    studyStreakDays:   0,
+    longestStreak:    0,
+    lastStudiedDate:  '',
+    bestRun:          null,
+  };
+}
+
 // --- Core Types ---
 
 export interface PlayerProfile {
   id: 'player';
   gold: number;
   upgrades: ShopUpgradeId[];
+  stats: PlayerStats;
 }
 
 export interface Item {
@@ -109,7 +164,7 @@ export interface Deck {
   name: string;
   tags: string[];
   createdAt: number;
-  builtInId?: string; // add this
+  builtInId?: string;
 }
 
 export interface Card {
@@ -205,6 +260,9 @@ export class IndexedDbService {
             db.createObjectStore('profile', { keyPath: 'id' });
           }
         }
+        // No schema change for stats — it's a field on the existing
+        // profile record, so no new object store is needed. Old profile
+        // records without stats are handled in getProfile() below.
       },
     });
   }
@@ -213,8 +271,18 @@ export class IndexedDbService {
 
   async getProfile(): Promise<PlayerProfile> {
     const profile = await this.db.get('profile', 'player');
-    if (!profile) return { id: 'player', gold: 0, upgrades: [] };
-    return { ...profile, upgrades: profile.upgrades ?? [] };
+    if (!profile) {
+      return { id: 'player', gold: 0, upgrades: [], stats: defaultStats() };
+    }
+    return {
+      ...profile,
+      upgrades: profile.upgrades ?? [],
+      stats: profile.stats ?? defaultStats(),
+    };
+  }
+
+  async saveProfile(profile: PlayerProfile): Promise<void> {
+    await this.db.put('profile', profile);
   }
 
   async addGold(amount: number): Promise<PlayerProfile> {
@@ -239,6 +307,20 @@ export class IndexedDbService {
 
   hasUpgrade(profile: PlayerProfile, id: ShopUpgradeId): boolean {
     return profile.upgrades.includes(id);
+  }
+
+  // --- Stats ---
+
+  async getStats(): Promise<PlayerStats> {
+    const profile = await this.getProfile();
+    return profile.stats ?? defaultStats();
+  }
+
+  async updateStats(updater: (s: PlayerStats) => void): Promise<void> {
+    const profile = await this.getProfile();
+    const stats: PlayerStats = { ...defaultStats(), ...profile.stats };
+    updater(stats);
+    await this.db.put('profile', { ...profile, stats });
   }
 
   // --- Deck operations ---

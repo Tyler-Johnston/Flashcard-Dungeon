@@ -1,0 +1,166 @@
+<div class="stats-page">
+  <header class="stats-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h1>Hall of Records</h1>
+    <div class="gold-display">
+      <span class="gold-coin"></span>
+      <span class="gold-amount">{{ gold() }}</span>
+    </div>
+  </header>
+
+  <!-- ── Streak banner ────────────────────────────────────────────────────── -->
+  <div class="streak-banner" [class.active]="stats().studyStreakDays > 0">
+    <span class="streak-flame">🔥</span>
+    <span class="streak-count">{{ stats().studyStreakDays }}</span>
+    <span class="streak-label">day streak</span>
+    @if (stats().longestStreak > stats().studyStreakDays) {
+      <span class="streak-best">Best: {{ stats().longestStreak }}</span>
+    }
+  </div>
+
+  <!-- ── Nemesis callout ──────────────────────────────────────────────────── -->
+  @if (nemesis(); as nem) {
+    <div class="nemesis-banner">
+      <img
+        class="nemesis-sprite"
+        [src]="'sprites/' + nem.id + '_a.png'"
+        [alt]="nem.name"
+        draggable="false"
+      />
+      <div class="nemesis-text">
+        <span class="nemesis-label">Your Nemesis</span>
+        <span class="nemesis-name">{{ nem.name }}</span>
+        <span class="nemesis-sub">Has slain you {{ nem.deaths }} {{ nem.deaths === 1 ? 'time' : 'times' }}</span>
+      </div>
+    </div>
+  }
+
+  <!-- ── Runs ─────────────────────────────────────────────────────────────── -->
+  <section class="stat-section">
+    <h2 class="section-title">Runs</h2>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ stats().runsStarted }}</span>
+        <span class="stat-label">Started</span>
+      </div>
+      <div class="stat-card accent-win">
+        <span class="stat-value">{{ stats().runsWon }}</span>
+        <span class="stat-label">Won</span>
+      </div>
+      <div class="stat-card accent-loss">
+        <span class="stat-value">{{ stats().runsLost }}</span>
+        <span class="stat-label">Lost</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ runsAbandoned() }}</span>
+        <span class="stat-label">Abandoned</span>
+      </div>
+    </div>
+
+    <div class="stat-row-wide">
+      @if (winRate() !== null) {
+        <div class="stat-pill">
+          <span class="pill-label">Win rate</span>
+          <span class="pill-value">{{ winRate() }}%</span>
+        </div>
+      }
+      @if (bestRunLabel(); as label) {
+        <div class="stat-pill">
+          <span class="pill-label">Best run</span>
+          <span class="pill-value">{{ label }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ── Cards ────────────────────────────────────────────────────────────── -->
+  <section class="stat-section">
+    <h2 class="section-title">Cards</h2>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ stats().totalReviews }}</span>
+        <span class="stat-label">Reviewed</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ stats().totalGoldEarned }}</span>
+        <span class="stat-label">Gold Earned</span>
+      </div>
+      @if (recallRate(); as rr) {
+        <div class="stat-card wide" [class.accent-win]="rr >= 70" [class.accent-loss]="rr < 40">
+          <span class="stat-value">{{ rr }}%</span>
+          <span class="stat-label">Recall rate (Good + Easy)</span>
+        </div>
+      }
+    </div>
+
+    @if (ratingDistribution(); as rd) {
+      <div class="rating-bar-wrap">
+        <div class="rating-bar">
+          <div class="rating-seg seg-again" [style.width.%]="rd.again" [title]="'Again: ' + rd.again + '%'"></div>
+          <div class="rating-seg seg-hard"  [style.width.%]="rd.hard"  [title]="'Hard: '  + rd.hard  + '%'"></div>
+          <div class="rating-seg seg-good"  [style.width.%]="rd.good"  [title]="'Good: '  + rd.good  + '%'"></div>
+          <div class="rating-seg seg-easy"  [style.width.%]="rd.easy"  [title]="'Easy: '  + rd.easy  + '%'"></div>
+        </div>
+        <div class="rating-legend">
+          <span class="leg-item leg-again">Again {{ rd.again }}%</span>
+          <span class="leg-item leg-hard"> Hard  {{ rd.hard  }}%</span>
+          <span class="leg-item leg-good"> Good  {{ rd.good  }}%</span>
+          <span class="leg-item leg-easy"> Easy  {{ rd.easy  }}%</span>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- ── Combat ───────────────────────────────────────────────────────────── -->
+  <section class="stat-section">
+    <h2 class="section-title">Combat</h2>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ stats().totalDamageDealt }}</span>
+        <span class="stat-label">Damage Dealt</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ stats().totalDamageTaken }}</span>
+        <span class="stat-label">Damage Taken</span>
+      </div>
+    </div>
+
+    @if (topKills().length > 0) {
+      <div class="enemy-list">
+        <span class="list-title">Most Defeated</span>
+        @for (entry of topKills(); track entry.id) {
+          <div class="enemy-kill-row">
+            <img class="enemy-kill-sprite" [src]="'sprites/' + entry.id + '_a.png'" [alt]="entry.name" draggable="false" />
+            <span class="enemy-kill-name">{{ entry.name }}</span>
+            <span class="enemy-kill-count">{{ entry.kills }}×</span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (topKillers().length > 0) {
+      <div class="enemy-list nemesis-list">
+        <span class="list-title">Killed You Most</span>
+        @for (entry of topKillers(); track entry.id) {
+          <div class="enemy-kill-row">
+            <img class="enemy-kill-sprite" [src]="'sprites/' + entry.id + '_a.png'" [alt]="entry.name" draggable="false" />
+            <span class="enemy-kill-name">{{ entry.name }}</span>
+            <span class="enemy-kill-count nemesis-count">{{ entry.deaths }}×</span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (topItem(); as item) {
+      <div class="item-pill">
+        <span class="item-pill-label">Most used item</span>
+        <span class="item-pill-value">{{ item.label }} ({{ item.count }}×)</span>
+      </div>
+    }
+  </section>
+
+  <!-- ── Empty state ──────────────────────────────────────────────────────── -->
+  @if (stats().runsStarted === 0) {
+    <p class="empty-stats">No runs yet — head into the dungeon to start building your legend.</p>
+  }
+</div>

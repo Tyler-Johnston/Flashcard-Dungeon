@@ -36,6 +36,11 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/shop/shop-module').then(m => m.ShopModule),
   },
+{
+    path: 'stats',
+    loadComponent: () =>
+      import('./features/stats/stats').then(m => m.StatsComponent),
+  },
   {
     path: '**',
     redirectTo: 'deck',
