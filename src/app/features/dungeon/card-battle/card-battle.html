@@ -1,5 +1,9 @@
 <div class="battle">
 
+  @if (run()?.practice) {
+    <div class="practice-banner">⟳ Practice Mode — card progress not saved</div>
+  }
+
   <!-- ── Endless prompt (shown after dungeon cleared, before run-over) ──── -->
   @if (showEndlessPrompt()) {
     <div class="run-over">

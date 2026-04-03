@@ -357,9 +357,12 @@
 // ─── Deck Actions ─────────────────────────────────────────────────────────────
 
 .deck-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: clamp(0.35rem, 1.5vw, 0.5rem);
-  justify-content: flex-end;
+
+  .btn.journal { grid-column: 1; }
+  .btn.delete  { grid-column: 2; }
 }
 
 .btn {
@@ -378,6 +381,18 @@
         filter: none;
         border-color: var(--ember-dim);
         color: var(--ember);
+      }
+    }
+  }
+  &.practice {
+    background: rgba(30, 136, 229, 0.1);
+    border-color: rgba(30, 136, 229, 0.35);
+    color: #5aabf0;
+
+    @media (hover: hover) {
+      &:hover {
+        background: rgba(30, 136, 229, 0.18);
+        border-color: rgba(30, 136, 229, 0.6);
       }
     }
   }

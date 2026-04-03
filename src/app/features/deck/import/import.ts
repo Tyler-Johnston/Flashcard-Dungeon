@@ -262,6 +262,73 @@ export class ImportComponent {
   goShop()   { this.router.navigate(['/shop']); }
   goStats()  { this.router.navigate(['/stats']); }
 
+  async startPractice(stats: DeckStats) {
+  const allCards = await this.idb.getCardsByDeck(stats.deck.id);
+  if (allCards.length === 0) {
+    this.message.set('This deck has no cards yet!');
+    this.status.set('error');
+    return;
+  }
+ 
+  const profile = await this.idb.getProfile();
+  const has = (id: Parameters<typeof this.idb.hasUpgrade>[1]) =>
+    this.idb.hasUpgrade(profile, id);
+ 
+  const diffConfig = this.getDifficultyConfig(stats.deck.id);
+ 
+  const maxHp = has('extra-hp') ? 125 : 100;
+  const inventoryCap = has('extra-inventory') ? BASE_INVENTORY_CAP + 1 : BASE_INVENTORY_CAP;
+ 
+  const startingInventory: Item[] = [];
+  if (has('starting-shield')) startingInventory.push(this.enemyService.makeItem('shield'));
+  if (has('random-item')) {
+    const pool: ItemType[] = has('starting-shield')
+      ? ['potion', 'skip', 'crit']
+      : ['potion', 'skip', 'shield', 'crit'];
+    startingInventory.push(this.enemyService.makeItem(pool[Math.floor(Math.random() * pool.length)]));
+  }
+ 
+  // Sort all cards by due date — soonest first, not yet due last
+  const now = Date.now();
+  const sorted = [...allCards].sort((a, b) => {
+    const aDue = a.due <= now ? 0 : a.due;
+    const bDue = b.due <= now ? 0 : b.due;
+    return aDue - bDue;
+  });
+ 
+  const firstEnemy = this.enemyService.getEnemyForRoom(1, diffConfig.totalRooms, diffConfig.id);
+  const scaledMaxHp = Math.round(firstEnemy.maxHp * diffConfig.hpMult);
+ 
+  await this.idb.saveRunState({
+    id: 'current',
+    deckId: stats.deck.id,
+    hp: maxHp,
+    maxHp,
+    currentRoom: 1,
+    totalRooms: diffConfig.totalRooms,
+    currentEnemy: { ...firstEnemy, maxHp: scaledMaxHp },
+    enemyHp: scaledMaxHp,
+    consecutiveAgain: 0,
+    cardQueue: sorted.map(c => c.id),
+    inventory: startingInventory.slice(0, inventoryCap),
+    inventoryCap,
+    activeEffects: has('better-loot') ? ['better-loot'] : [],
+    powerups: [],
+    startedAt: Date.now(),
+    roomsCleared: 0,
+    uniqueCardsReviewed: [],
+    difficulty: diffConfig.id,
+    atkMult: diffConfig.atkMult,
+    goldMult: 0,          // no gold in practice
+    playerAtkMult: diffConfig.playerAtkMult,
+    endless: false,
+    endlessWave: 0,
+    practice: true,       // ← the key flag
+  });
+ 
+  this.router.navigate(['/dungeon']);
+}
+
   async startRun(stats: DeckStats) {
     const cards = await this.idb.getDueCards(stats.deck.id);
     if (cards.length === 0) {
@@ -322,6 +389,7 @@ export class ImportComponent {
       playerAtkMult: diffConfig.playerAtkMult,
       endless: false,
       endlessWave: 0,
+      practice: false,
     });
 
     this.router.navigate(['/dungeon']);

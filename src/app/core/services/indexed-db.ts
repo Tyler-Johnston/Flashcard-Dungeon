@@ -208,6 +208,7 @@ export interface RunState {
   playerAtkMult: number;
   endless: boolean;
   endlessWave: number;
+  practice: boolean;
 }
 
 // --- IDB Schema ---

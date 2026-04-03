@@ -528,3 +528,16 @@
   padding-top: 0.4rem;
   margin-top: 0.1rem;
 }
+
+.practice-banner {
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: clamp(0.62rem, 1.8vw, 0.72rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5aabf0;
+  background: rgba(30, 136, 229, 0.08);
+  border: 1px solid rgba(30, 136, 229, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+}

@@ -92,7 +92,9 @@ export class CardBattle implements OnInit {
     this.queue.set(cards);
     this.run.set(run);
     this.rollSpriteVariant();
-    await this.statsService.recordRunStarted();
+    if (!run.practice) {
+      await this.statsService.recordRunStarted();
+    }
   }
 
   flip() {
@@ -137,7 +139,10 @@ export class CardBattle implements OnInit {
     }
 
     const updated = this.fsrs.grade(card, effectiveRating);
-    await this.idb.saveCard(updated);
+    // Practice mode: don't write FSRS state — reviewing early would corrupt intervals
+    if (!run.practice) {
+      await this.idb.saveCard(updated);
+    }
 
     const playerMissed = effectiveRating === Rating.Again;
     let playerDmg = 0;
@@ -267,12 +272,14 @@ export class CardBattle implements OnInit {
       effectiveRating === Rating.Good  ? 'good'  : 'easy'
     ) as 'again' | 'hard' | 'good' | 'easy';
 
-    await this.statsService.recordCardRated({
-      rating:      ratingKey,
-      cardId:      card.id,
-      damageDealt: playerDmg,
-      damageTaken: enemyDmg,
-    });
+    if (!run.practice) {
+      await this.statsService.recordCardRated({
+        rating:      ratingKey,
+        cardId:      card.id,
+        damageDealt: playerDmg,
+        damageTaken: enemyDmg,
+      });
+    }
 
     this.flipped.set(false);
 
@@ -286,7 +293,7 @@ export class CardBattle implements OnInit {
 
     if (newPlayerHp <= 0) { await this.endRun(false); return; }
     if (newEnemyHp <= 0)  { await this.handleEnemyDefeated(); return; }
-    if (!this.hasCards())  { await this.endRun(false); }
+    if (!this.hasCards())  { await this.refillQueue(); }
   }
 
   async useItem(item: Item) {
@@ -384,7 +391,13 @@ export class CardBattle implements OnInit {
       ? this.enemyService.getEndlessEnemy(nextWave)
       : this.enemyService.getEnemyForRoom(nextRoom, run.totalRooms, run.difficulty);
 
-    const cards = await this.idb.getDueCards(run.deckId);
+    const allCards = await this.idb.getCardsByDeck(run.deckId);
+    const now2 = Date.now();
+    const cards = [...allCards].sort((a, b) => {
+      const aDue = a.due <= now2 ? 0 : a.due;
+      const bDue = b.due <= now2 ? 0 : b.due;
+      return aDue - bDue;
+    }).slice(0, 40);
 
     // Scale HP — in endless mode ramp difficulty slightly each wave
     const hpMult = run.endless
@@ -438,14 +451,14 @@ export class CardBattle implements OnInit {
     const roomGold = run.roomsCleared * GOLD_PER_ROOM;
     const cardGold = run.uniqueCardsReviewed.length * GOLD_PER_UNIQUE_CARD;
     const victoryBonus = isVictory ? GOLD_VICTORY_BONUS : 0;
-    const total = Math.round((roomGold + cardGold + victoryBonus) * goldMult);
+    const total = run.practice ? 0 : Math.round((roomGold + cardGold + victoryBonus) * goldMult);
 
     if (total > 0) {
       await this.idb.addGold(total);
       this.goldEarned.set(total);
     }
 
-    if (isVictory) {
+    if (!run.practice && isVictory) {
       const deck = (await this.idb.getAllDecks()).find(d => d.id === run.deckId);
       await this.statsService.recordRunWon({
         roomsCleared: run.roomsCleared,
@@ -453,7 +466,15 @@ export class CardBattle implements OnInit {
         deckName:     deck?.name ?? 'Unknown',
         goldEarned:   total,
       });
-    } else {
+    } else if (!run.practice && run.endless) {
+      // Cards exhausted mid-endless — not a loss, just record wave progress
+      const deck = (await this.idb.getAllDecks()).find(d => d.id === run.deckId);
+      await this.statsService.recordEndlessExit({
+        endlessWave: run.endlessWave ?? 0,
+        difficulty:  run.difficulty,
+        deckName:    deck?.name ?? 'Unknown',
+      });
+    } else if (!run.practice) {
       await this.statsService.recordRunLost(run.currentEnemy.id);
     }
 
@@ -468,6 +489,35 @@ export class CardBattle implements OnInit {
 
     this.runOver.set(true);
     await this.idb.clearRunState();
+  }
+
+  /** Refill the card queue when it runs dry mid-dungeon.
+   *  Priority: due cards first, then soonest-due, excluding nothing
+   *  (player should never be blocked). */
+  private async refillQueue(): Promise<boolean> {
+    const run = this.run();
+    if (!run) return false;
+
+    const allCards = await this.idb.getCardsByDeck(run.deckId);
+    if (allCards.length === 0) return false;
+
+    const now = Date.now();
+
+    // Sort: due cards first (due <= now), then by due date ascending
+    const sorted = [...allCards].sort((a, b) => {
+      const aDue = a.due <= now ? 0 : a.due;
+      const bDue = b.due <= now ? 0 : b.due;
+      return aDue - bDue;
+    });
+
+    // Take up to 20 cards, preferring ones not reviewed this session
+    const reviewed = new Set(run.uniqueCardsReviewed);
+    const fresh   = sorted.filter(c => !reviewed.has(c.id));
+    const refill  = fresh.length > 0 ? fresh.slice(0, 20) : sorted.slice(0, 20);
+
+    this.queue.set(refill);
+    this.currentIndex.set(0);
+    return true;
   }
 
   private async updateRun(partial: Partial<RunState>) {
