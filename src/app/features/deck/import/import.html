@@ -1,21 +1,102 @@
 <div class="import-page">
-
   <h1>Flashcard Dungeon</h1>
 
   <div class="hero-frame">
     <img [src]="heroSpriteUrl" alt="Monster" class="hero-sprite" draggable="false" />
   </div>
 
-  <div class="upload-zone">
-    <p>Import an Anki-format <code>.txt</code> file</p>
-    <label class="upload-btn">
-      Choose File
-      <input type="file" accept=".txt" (change)="onFileSelected($event)" hidden />
-    </label>
+  <!-- Import panel -->
+  <div class="import-panel">
+    <div class="import-tabs">
+      <button
+        class="import-tab"
+        [class.active]="importMode() === 'file'"
+        (click)="setImportMode('file')">
+        ↑ File
+      </button>
+      <button
+        class="import-tab"
+        [class.active]="importMode() === 'paste'"
+        (click)="setImportMode('paste')">
+        ✎ Paste
+      </button>
+      <button
+        class="import-tab"
+        (click)="newDeck()">
+        + New
+      </button>
+    </div>
+
+    <!-- File upload -->
+    @if (importMode() === 'file') {
+      <div class="import-body file-mode">
+        <p class="import-hint">Upload a <code>.txt</code> file — tab, comma, <code>word - meaning</code>, arrow, or alternating-line format all work.</p>
+        <label class="upload-btn">
+          Choose File
+          <input type="file" accept=".txt" (change)="onFileSelected($event)" hidden />
+        </label>
+      </div>
+    }
+
+    <!-- Paste -->
+    @if (importMode() === 'paste') {
+      <div class="import-body paste-mode">
+        <p class="import-hint">Paste flashcard text below. Supports <code>word - meaning</code>, <code>word → meaning</code>, <code>Q: / A:</code>, tab-separated, and more.</p>
+
+        <!-- AI prompt helper -->
+        <div class="ai-prompt-row">
+          <span class="ai-prompt-label">✦ Generate with AI</span>
+          <div class="ai-prompt-fields">
+            <input
+              class="ai-topic-input"
+              type="text"
+              placeholder="E.g. Spanish vocab"
+              [value]="aiTopic()"
+              (input)="onAiTopicChange($any($event.target).value)"
+            />
+            <button
+              class="copy-prompt-btn"
+              [class.copied]="promptCopied()"
+              (click)="copyAiPrompt()">
+              {{ promptCopied() ? '✓ Copied!' : '⎘ Copy prompt' }}
+            </button>
+          </div>
+        </div>
+
+        <input
+          class="deck-name-input"
+          type="text"
+          placeholder="Deck name (optional)"
+          [value]="pasteDeckName()"
+          (input)="onPasteDeckNameChange($any($event.target).value)"
+        />
+        <textarea
+          class="paste-area"
+          placeholder="hola - hello&#10;adiós - goodbye&#10;gracias - thank you"
+          [value]="pasteText()"
+          (input)="onPasteTextChange($any($event.target).value)"
+        ></textarea>
+        @if (pasteText().trim().length > 0) {
+          <p class="paste-preview">
+            @if (pastePreviewCount() > 0) {
+              <span class="preview-ok">✓ {{ pastePreviewCount() }} cards detected</span>
+            } @else {
+              <span class="preview-warn">⚠ No pairs detected — check format</span>
+            }
+          </p>
+        }
+        <button
+          class="import-btn"
+          [disabled]="pastePreviewCount() === 0"
+          (click)="importFromPaste()">
+          Import Cards
+        </button>
+      </div>
+    }
   </div>
 
+  <!-- Toolbar -->
   <div class="deck-toolbar">
-    <button class="new-deck-btn" (click)="newDeck()">+ New Deck</button>
     <button class="shop-btn" (click)="goShop()">⚑ Shop</button>
     <div class="gold-display">
       <span class="gold-coin"></span>
@@ -23,20 +104,21 @@
     </div>
   </div>
 
+  <!-- Status message -->
   @if (status() !== 'idle') {
     <div class="message"
-         [class.success]="status() === 'success'"
-         [class.error]="status() === 'error'"
-         [class.loading]="status() === 'loading'">
+      [class.success]="status() === 'success'"
+      [class.error]="status() === 'error'"
+      [class.loading]="status() === 'loading'">
       @if (status() === 'loading') { Importing... }
       @else { {{ message() }} }
     </div>
   }
 
+  <!-- Deck list -->
   @if (deckGroups().length > 0) {
     <div class="deck-groups">
       <h2>Your Decks</h2>
-
       @for (group of deckGroups(); track group.label) {
         <div class="deck-group">
           <button class="group-header" (click)="toggleGroup(group.label)">
@@ -45,7 +127,6 @@
             <span class="group-count">{{ group.decks.length }}</span>
             <span class="group-chevron" [class.collapsed]="group.collapsed">▾</span>
           </button>
-
           @if (!group.collapsed) {
             @for (stats of group.decks; track stats.deck.id) {
               <div class="deck-card">
@@ -53,20 +134,16 @@
                   <span class="deck-name">{{ stats.deck.name }}</span>
                   <span class="deck-completion">{{ stats.completion }}%</span>
                 </div>
-
                 <div class="deck-progress-bar">
                   @for (seg of progressSegments(stats); track seg.state) {
                     <div class="progress-seg state-{{ seg.state }}" [style.width.%]="seg.pct"></div>
                   }
                 </div>
-
                 <div class="deck-meta">
                   <span class="meta-item">{{ stats.totalCards }} cards</span>
                   <span class="meta-item">{{ stats.counts[2] }} in review</span>
                   <span class="meta-item">{{ stats.counts[0] }} new</span>
                 </div>
-
-                <!-- Difficulty selector -->
                 <div class="difficulty-row">
                   @for (diff of DIFFICULTIES; track diff.id) {
                     <button
@@ -77,7 +154,6 @@
                     </button>
                   }
                 </div>
-
                 <div class="deck-actions">
                   <button class="btn play"    (click)="startRun(stats)">▶︎ Play</button>
                   <button class="btn journal" (click)="openJournal(stats)">≡ Journal</button>
@@ -90,7 +166,6 @@
       }
     </div>
   } @else {
-    <p class="empty">No decks yet. Import a .txt file to get started.</p>
+    <p class="empty">No decks yet. Import a file, paste text, or create one manually.</p>
   }
-
 </div>

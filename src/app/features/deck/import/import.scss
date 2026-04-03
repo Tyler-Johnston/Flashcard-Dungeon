@@ -152,28 +152,6 @@
   gap: 0.5rem;
 }
 
-.new-deck-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-dim);
-  font-family: var(--font-ui);
-  font-size: clamp(0.65rem, 1.9vw, 0.75rem);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.5rem 1.25rem;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-
-  @media (hover: hover) {
-    &:hover {
-      filter: none;
-      color: var(--ember);
-      border-color: var(--ember-dim);
-    }
-  }
-}
 
 .shop-btn {
   background: none;
@@ -460,5 +438,206 @@
       color: var(--text);
       border-color: var(--border-glow);
     }
+  }
+}
+
+// ─── Import panel (tabs + body) ────────────────────────────────────────────────
+// Add these styles to your existing import.scss.
+// The existing .upload-zone styles can be removed; the panel replaces them.
+
+.import-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0 auto 1.25rem;
+  max-width: 480px;
+  width: 100%;
+}
+
+.import-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.import-tab {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+
+  &:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  &.active {
+    color: var(--ember);
+    background: color-mix(in srgb, var(--ember) 8%, transparent);
+  }
+
+  &:hover:not(.active) {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+}
+
+.import-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.import-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+
+  code {
+    color: var(--ember);
+    background: color-mix(in srgb, var(--ember) 12%, transparent);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+}
+
+// File mode
+.file-mode {
+  align-items: center;
+  padding: 1.25rem 1rem;
+}
+
+// Paste mode
+.deck-name-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  box-sizing: border-box;
+
+  &::placeholder { color: var(--text-muted); }
+  &:focus { outline: none; border-color: var(--ember); }
+}
+
+.paste-area {
+  width: 100%;
+  min-height: 140px;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+
+  &::placeholder { color: var(--text-muted); opacity: 0.6; }
+  &:focus { outline: none; border-color: var(--ember); }
+}
+
+.paste-preview {
+  margin: -0.25rem 0 0;
+  font-size: 0.76rem;
+  font-family: var(--font-ui);
+}
+
+.preview-ok   { color: var(--ember); }
+.preview-warn { color: var(--text-muted); }
+
+.import-btn {
+  align-self: flex-end;
+  padding: 0.5rem 1.25rem;
+  background: var(--ember);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+// ─── AI prompt helper ──────────────────────────────────────────────────────────
+
+.ai-prompt-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem;
+  background: color-mix(in srgb, var(--ember) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ember) 25%, transparent);
+  border-radius: 6px;
+}
+
+.ai-prompt-label {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ember);
+  text-transform: uppercase;
+}
+
+.ai-prompt-fields {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ai-topic-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;   // ← was 0.8rem
+  box-sizing: border-box;
+
+  &::placeholder { color: var(--text-muted); }
+  &:focus { outline: none; border-color: var(--ember); }
+}
+
+.copy-prompt-btn {
+  flex-shrink: 0;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--ember);
+  border-radius: 5px;
+  color: var(--ember);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--ember) 15%, transparent);
+  }
+
+  &.copied {
+    background: var(--ember);
+    color: #fff;
+    border-color: var(--ember);
   }
 }

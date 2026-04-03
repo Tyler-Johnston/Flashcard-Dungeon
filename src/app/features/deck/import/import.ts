@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DeckImportService } from '../../../core/services/deck-import';
 import { IndexedDbService, Deck, Card, Item, DIFFICULTIES, DifficultyConfig, Difficulty } from '../../../core/services/indexed-db';
 import { Router } from '@angular/router';
@@ -43,9 +44,11 @@ function getGroupLabel(pct: number): string {
   return 'Novice';
 }
 
+type ImportMode = 'file' | 'paste';
+
 @Component({
   selector: 'app-import',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './import.html',
   styleUrl: './import.scss',
 })
@@ -64,23 +67,25 @@ export class ImportComponent {
   // Per-deck difficulty selection — keyed by deck id
   selectedDifficulties = signal<Record<string, Difficulty>>({});
 
+  // Import mode toggle
+  importMode = signal<ImportMode>('file');
+
+  // Paste import state
+  pasteText = signal('');
+  pasteDeckName = signal('');
+
+  // AI prompt helper
+  aiTopic = signal('');
+  promptCopied = signal(false);
+  private copiedTimer: ReturnType<typeof setTimeout> | null = null;
+
   readonly DIFFICULTIES = DIFFICULTIES;
 
   readonly heroSpriteUrl = (() => {
-  const keys = [
-    'mutant_frog',
-    'angry_chicken',
-    'knight',
-    'mad_mushroom',
-    'minotaur',
-    'lich',
-    'mimic',
-    'fang',
-    'dragon',
-    //'orc',
-    //'chicken_army',
-    //'mutant_turtle',
-  ];
+    const keys = [
+      'mutant_frog', 'angry_chicken', 'knight', 'mad_mushroom',
+      'minotaur', 'lich', 'mimic', 'fang', 'dragon',
+    ];
     const key = keys[Math.floor(Math.random() * keys.length)];
     const variant = Math.random() < 0.5 ? 'a' : 'b';
     return `sprites/${key}_${variant}.png`;
@@ -93,6 +98,9 @@ export class ImportComponent {
     Adept: '50–74%',
     Mastered: '75–100%',
   };
+
+  /** Live preview: how many card pairs are detected in the pasted text */
+  pastePreviewCount = computed(() => this.importer.previewCount(this.pasteText()));
 
   deckGroups = computed((): DeckGroup[] => {
     const stats = this.deckStats();
@@ -121,11 +129,105 @@ export class ImportComponent {
     }));
     this.deckStats.set(stats);
 
-    // Default all decks to 'apprentice'
     const defaults: Record<string, Difficulty> = {};
     stats.forEach(s => defaults[s.deck.id] = 'apprentice');
     this.selectedDifficulties.set(defaults);
   }
+
+  // ─── Mode toggle ─────────────────────────────────────────────────────────────
+
+  setImportMode(mode: ImportMode) {
+    this.importMode.set(mode);
+    this.status.set('idle');
+  }
+
+  // ─── AI prompt helper ─────────────────────────────────────────────────────────
+
+  onAiTopicChange(value: string) {
+    this.aiTopic.set(value);
+  }
+
+  copyAiPrompt() {
+    const topic = this.aiTopic().trim();
+    const topicLine = topic
+      ? `The topic is: ${topic}.`
+      : 'The topic is: Spanish vocabulary.';
+
+    const prompt =
+      `Generate a list of flashcard pairs I can study. ${topicLine}\n\n` +
+      `Format each card on its own line as:\n` +
+      `front - back\n\n` +
+      `Rules:\n` +
+      `- One card per line\n` +
+      `- Separate front and back with " - " (space, dash, space)\n` +
+      `- No numbering, no bullet points, no extra commentary\n` +
+      `- Aim for 30–50 cards\n\n` +
+      `Example output:\n` +
+      `hola - hello\n` +
+      `adiós - goodbye\n` +
+      `gracias - thank you`;
+
+    navigator.clipboard.writeText(prompt).then(() => {
+      this.promptCopied.set(true);
+      if (this.copiedTimer) clearTimeout(this.copiedTimer);
+      this.copiedTimer = setTimeout(() => this.promptCopied.set(false), 2500);
+    });
+  }
+
+  // ─── Paste import ─────────────────────────────────────────────────────────────
+
+  onPasteTextChange(value: string) {
+    this.pasteText.set(value);
+  }
+
+  onPasteDeckNameChange(value: string) {
+    this.pasteDeckName.set(value);
+  }
+
+  async importFromPaste() {
+    const text = this.pasteText().trim();
+    const name = this.pasteDeckName().trim() || 'My Deck';
+
+    if (!text) {
+      this.message.set('Please paste some flashcard text first.');
+      this.status.set('error');
+      return;
+    }
+
+    this.status.set('loading');
+    try {
+      const deck = await this.importer.importFromText(text, name);
+      this.message.set(`Imported "${deck.name}" — ${this.pastePreviewCount()} cards!`);
+      this.status.set('success');
+      this.pasteText.set('');
+      this.pasteDeckName.set('');
+      await this.loadDecks();
+    } catch (e: any) {
+      this.message.set(e?.message ?? 'Could not parse flashcard pairs from that text.');
+      this.status.set('error');
+    }
+  }
+
+  // ─── File import ──────────────────────────────────────────────────────────────
+
+  async onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.status.set('loading');
+    try {
+      const deck = await this.importer.importFromFile(file);
+      this.message.set(`Imported "${deck.name}" successfully!`);
+      this.status.set('success');
+      await this.loadDecks();
+    } catch (e: any) {
+      this.message.set(e?.message ?? 'Import failed. Check that the file has valid flashcard pairs.');
+      this.status.set('error');
+    }
+  }
+
+  // ─── Deck helpers ─────────────────────────────────────────────────────────────
 
   getDifficulty(deckId: string): Difficulty {
     return this.selectedDifficulties()[deckId] ?? 'apprentice';
@@ -157,25 +259,8 @@ export class ImportComponent {
     ].filter(s => s.pct > 0);
   }
 
-  newDeck() { this.router.navigate(['/editor']); }
-  goShop()  { this.router.navigate(['/shop']); }
-
-  async onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    this.status.set('loading');
-    try {
-      const deck = await this.importer.importFromFile(file);
-      this.message.set(`Imported "${deck.name}" successfully!`);
-      this.status.set('success');
-      await this.loadDecks();
-    } catch (e) {
-      this.message.set('Import failed. Make sure it is a valid tab-separated .txt file.');
-      this.status.set('error');
-    }
-  }
+  newDeck()  { this.router.navigate(['/editor']); }
+  goShop()   { this.router.navigate(['/shop']); }
 
   async startRun(stats: DeckStats) {
     const cards = await this.idb.getDueCards(stats.deck.id);
@@ -191,7 +276,6 @@ export class ImportComponent {
 
     const diffConfig = this.getDifficultyConfig(stats.deck.id);
 
-    // Shop upgrades
     const maxHp = has('extra-hp') ? 125 : 100;
     const inventoryCap = has('extra-inventory') ? BASE_INVENTORY_CAP + 1 : BASE_INVENTORY_CAP;
 
@@ -210,12 +294,9 @@ export class ImportComponent {
 
     const activeEffects: string[] = has('better-loot') ? ['better-loot'] : [];
 
-    // Apply difficulty HP multiplier to first enemy
     const firstEnemy = this.enemyService.getEnemyForRoom(1, diffConfig.totalRooms, diffConfig.id);
-
     const scaledMaxHp = Math.round(firstEnemy.maxHp * diffConfig.hpMult);
     const scaledEnemy = { ...firstEnemy, maxHp: scaledMaxHp };
-
 
     await this.idb.saveRunState({
       id: 'current',
@@ -224,7 +305,7 @@ export class ImportComponent {
       maxHp,
       currentRoom: 1,
       totalRooms: diffConfig.totalRooms,
-      currentEnemy: scaledEnemy,  // ← scaled enemy, not raw
+      currentEnemy: scaledEnemy,
       enemyHp: scaledMaxHp,
       consecutiveAgain: 0,
       cardQueue: cards.map(c => c.id),
@@ -257,5 +338,4 @@ export class ImportComponent {
   }
 }
 
-// Re-export for template use
 type ItemType = 'potion' | 'skip' | 'shield' | 'crit';
