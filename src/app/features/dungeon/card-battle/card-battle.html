@@ -1,10 +1,32 @@
 <div class="battle">
 
-  @if (runOver()) {
+  <!-- ── Endless prompt (shown after dungeon cleared, before run-over) ──── -->
+  @if (showEndlessPrompt()) {
     <div class="run-over">
-      @if (victory()) {
-        <h2>🏆 Dungeon Cleared!</h2>
-        <p>You defeated all enemies and slew the Dragon.</p>
+      <h2>🏆 Dungeon Cleared!</h2>
+      <p>You've slain every enemy. The dungeon trembles — but it doesn't end here.</p>
+
+      @if (goldEarned() > 0) {
+        <div class="gold-reward">
+          <span class="gold-coin"></span>
+          <span class="gold-amount">+{{ goldEarned() }} Gold</span>
+        </div>
+      }
+
+      <p class="endless-flavour">Do you dare go deeper?</p>
+
+      <div class="run-over-actions">
+        <button class="btn easy" (click)="startEndless()">∞ Endless Mode</button>
+        <button class="btn hard" (click)="goBack()">← Back to Decks</button>
+      </div>
+    </div>
+
+  <!-- ── Run over ────────────────────────────────────────────────────────── -->
+  } @else if (runOver()) {
+    <div class="run-over">
+      @if (isEndless()) {
+        <h2>💀 Fallen in the Depths</h2>
+        <p>You survived {{ endlessWave() }} endless {{ endlessWave() === 1 ? 'wave' : 'waves' }}.</p>
       } @else if (playerHp() <= 0) {
         <h2>💀 Defeated...</h2>
         <p>The dungeon claims another adventurer.</p>
@@ -26,6 +48,7 @@
       </div>
     </div>
 
+  <!-- ── Loot screen ─────────────────────────────────────────────────────── -->
   } @else if (lootOffer()) {
     <div class="loot-screen">
       <h2>⚔️ Enemy Defeated!</h2>
@@ -42,8 +65,7 @@
               <p class="cap-warning">Inventory full — discard one to take this</p>
               <div class="discard-list">
                 @for (inv of inventory(); track inv.id) {
-                  <button class="btn hard discard-btn"
-                          (click)="discardAndTake(inv, item)">
+                  <button class="btn hard discard-btn" (click)="discardAndTake(inv, item)">
                     Discard {{ inv.name }}
                   </button>
                 }
@@ -58,6 +80,7 @@
       <button class="skip-btn" (click)="skipLoot()">Skip loot</button>
     </div>
 
+  <!-- ── Battle ──────────────────────────────────────────────────────────── -->
   } @else if (currentCard()) {
 
     <div class="hud">
@@ -65,7 +88,9 @@
         <app-hp-bar label="Player" [current]="playerHp()" [max]="run()?.maxHp ?? 100" color="green" />
       </div>
       <div class="room-indicator">
-        @if (currentRoom() > (run()?.totalRooms ?? 3)) {
+        @if (isEndless()) {
+          ∞ Wave {{ endlessWave() }}
+        } @else if (currentRoom() > (run()?.totalRooms ?? 3)) {
           ⚔️ Boss
         } @else {
           Room {{ currentRoom() }} / {{ run()?.totalRooms ?? 3 }}
@@ -107,6 +132,9 @@
         </div>
         <div class="encounter-details">
           <span class="enemy-name">{{ currentEnemy()!.name }}</span>
+          @if (isEndless()) {
+            <span class="endless-wave-badge">∞ Wave {{ endlessWave() }}</span>
+          }
           @if (enemyService.getAbilityDescription(currentEnemy()!)) {
             <span class="enemy-ability">
               {{ enemyService.getAbilityDescription(currentEnemy()!) }}
@@ -161,7 +189,7 @@
       </div>
     }
 
-    <button class="leave-btn" (click)="goBack()">✕ Abandon Run</button>
+    <button class="leave-btn" (click)="goBack()">{{ isEndless() ? "✕ End Endless" : "✕ Abandon Run" }}</button>
 
   } @else {
     <p>No cards due. Come back later!</p>

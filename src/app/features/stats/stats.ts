@@ -4,10 +4,10 @@ import { Router } from '@angular/router';
 import { IndexedDbService, PlayerStats, defaultStats } from '../../core/services/indexed-db';
 
 const ENEMY_NAMES: Record<string, string> = {
-  mutant_frog:   'Mutant Frog',
+  frog:          'Mutant Frog',
   angry_chicken: 'Angry Chicken',
   knight:        'Knight',
-  mad_mushroom:  'Mad Mushroom',
+  mushroom:      'Mad Mushroom',
   minotaur:      'Minotaur',
   lich:          'Lich',
   mimic:         'Mimic',
@@ -15,7 +15,7 @@ const ENEMY_NAMES: Record<string, string> = {
   dragon:        'Dragon',
   orc:           'Orc Warlord',
   chicken_army:  'Chicken Army',
-  mutant_turtle: 'Mutant Turtle',
+  turtle:        'Mutant Turtle',
 };
 
 const ENEMY_SPRITE_KEYS: Record<string, string> = {
@@ -63,8 +63,6 @@ export class StatsComponent implements OnInit {
 
   stats = signal<PlayerStats>(defaultStats());
   gold  = signal(0);
-
-  // ─── Derived ────────────────────────────────────────────────────────────────
 
   winRate = computed(() => {
     const s = this.stats();
@@ -119,16 +117,20 @@ export class StatsComponent implements OnInit {
     const entries = sortedEntries(this.stats().itemsUsed ?? {});
     if (entries.length === 0) return null;
     const [type, count] = entries[0];
-    return { label: ITEM_NAMES[type] ?? type, count };
+    return { type, label: ITEM_NAMES[type] ?? type, count };
   });
 
   bestRunLabel = computed(() => {
     const b = this.stats().bestRun;
     if (!b) return null;
-    return `${b.deckName} · ${DIFFICULTY_LABELS[b.difficulty] ?? b.difficulty} · ${b.roomsCleared} rooms`;
+    const isEndless = b.difficulty.startsWith('endless-');
+    const baseDiff  = b.difficulty.replace('endless-', '');
+    const diffLabel = DIFFICULTY_LABELS[baseDiff] ?? baseDiff;
+    if (isEndless) {
+      return `${b.deckName} · ${diffLabel} · ∞ Wave ${b.roomsCleared}`;
+    }
+    return `${b.deckName} · ${diffLabel} · ${b.roomsCleared} rooms`;
   });
-
-  // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
   async ngOnInit() {
     const profile = await this.idb.getProfile();

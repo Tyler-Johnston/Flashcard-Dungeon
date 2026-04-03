@@ -197,7 +197,7 @@
 .stat-value {
   font-family: var(--font-title);
   font-size: clamp(1.4rem, 4vw, 1.8rem);
-  color: var(--text);  // was var(--ember)
+  color: var(--item);
   line-height: 1;
 }
 
@@ -395,4 +395,29 @@
   font-size: clamp(0.8rem, 2.2vw, 0.92rem);
   font-style: italic;
   padding: 2.5rem 0;
+}
+
+// ── Item pill content ─────────────────────────────────────────────────────────
+
+.item-pill-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// Exact same values as .item-icon in card-battle.scss (loot screen)
+.item-icon {
+  display: block;
+  width: 48px;
+  height: 48px;
+  background-image: url('/sprites/rpgItems.png');
+  background-size: 384px 384px;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+
+  &.item-potion { background-position:    0px    0px; }
+  &.item-shield { background-position: -288px  -96px; }
+  &.item-crit   { background-position: -336px -336px; }
+  &.item-skip   { background-position:    0px -288px; }
 }

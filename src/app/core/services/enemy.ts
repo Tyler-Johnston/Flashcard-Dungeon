@@ -4,8 +4,6 @@ import { Enemy, EnemyTier, Item, ItemType } from './indexed-db';
 @Injectable({ providedIn: 'root' })
 export class EnemyService {
 
-  // --- Enemy Definitions ---
-
   private enemies: Enemy[] = [
     {
       id: 'frog',
@@ -129,8 +127,6 @@ export class EnemyService {
     },
   ];
 
-  // --- Item Definitions ---
-
   private itemDefs: Record<ItemType, Omit<Item, 'id'>> = {
     potion: {
       type: 'potion',
@@ -185,14 +181,24 @@ export class EnemyService {
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
+  /**
+   * Endless mode: pick any enemy from the full roster (including bosses
+   * every ~4 rooms based on the wave number).
+   */
+  getEndlessEnemy(wave: number): Enemy {
+    const isBossWave = wave % 4 === 0;
+    const pool = isBossWave
+      ? this.enemies.filter(e => e.tier === 'boss')
+      : this.enemies.filter(e => e.tier !== 'boss');
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
   // --- Loot ---
 
-  /** Default 70% loot roll. */
   rollLoot(enemy: Enemy): Item[] | null {
     return this.rollLootWithChance(enemy, 0.7);
   }
 
-  /** Loot roll with configurable drop chance — used by better-loot upgrade (85%). */
   rollLootWithChance(enemy: Enemy, chance: number): Item[] | null {
     if (Math.random() > chance) return null;
     if (enemy.lootTable.length === 0) return null;
@@ -207,8 +213,6 @@ export class EnemyService {
     };
   }
 
-  // --- Helpers ---
-
   private pickFromTable(table: ItemType[], count: number): ItemType[] {
     const results: ItemType[] = [];
     const pool = [...table];
@@ -218,16 +222,11 @@ export class EnemyService {
       const idx = Math.floor(Math.random() * pool.length);
       results.push(pool[idx]);
       pool.splice(idx, 1);
-
-      if (pool.length === 0 && i < count - 1) {
-        pool.push(...table);
-      }
+      if (pool.length === 0 && i < count - 1) pool.push(...table);
     }
 
     return results;
   }
-
-  // --- Ability Descriptions (for UI) ---
 
   getAbilityDescription(enemy: Enemy): string {
     const map: Record<string, string> = {
@@ -241,7 +240,7 @@ export class EnemyService {
       'no-mercy': 'Hard is treated the same as Again.',
       bleed: 'Passively deals +5 bonus damage on every card rating, regardless of your answer.',
       enrage: 'Doubles ATK when below 50% HP.',
-      'warcry': 'Every 4th card, unleashes a Warcry — deals double ATK damage regardless of your answer.',
+      warcry: 'Every 4th card, unleashes a Warcry — deals double ATK damage regardless of your answer.',
       swarm: 'Each Again summons a Chick: permanently grants +8 ATK (max 3 stacks).',
       shell: 'Blocks the first hit of every other card. You must strike twice in a row to pierce it.',
     };

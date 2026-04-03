@@ -44,6 +44,9 @@ export class CardBattle implements OnInit {
   statusMessage = signal<string | null>(null);
   goldEarned = signal(0);
 
+  /** True when dungeon is cleared and we're showing the endless prompt */
+  showEndlessPrompt = signal(false);
+
   cramBonus = signal(0);
   readonly spriteVariant = signal<'a' | 'b'>('a');
   enemyInfoOpen = signal(false);
@@ -62,6 +65,8 @@ export class CardBattle implements OnInit {
   currentEnemy = computed(() => this.run()?.currentEnemy ?? null);
   currentRoom  = computed(() => this.run()?.currentRoom ?? 1);
   inventoryCap = computed(() => this.run()?.inventoryCap ?? 5);
+  isEndless    = computed(() => this.run()?.endless ?? false);
+  endlessWave  = computed(() => this.run()?.endlessWave ?? 0);
 
   readonly spriteUrl = computed(() => {
     const enemy = this.currentEnemy();
@@ -87,8 +92,6 @@ export class CardBattle implements OnInit {
     this.queue.set(cards);
     this.run.set(run);
     this.rollSpriteVariant();
-
-    // ── Record run started ───────────────────────────────────────────────
     await this.statsService.recordRunStarted();
   }
 
@@ -123,8 +126,6 @@ export class CardBattle implements OnInit {
     const playerAtkMult = run.playerAtkMult ?? 1;
     const isEnraged = run.activeEffects.includes('enraged');
 
-    // ── Pre-rating ability overrides ──────────────────────────────────────
-
     if (enemy.ability === 'suppress-crit' && rating === Rating.Easy) {
       effectiveRating = Rating.Good;
       this.showStatus(`${enemy.name} suppresses your crit!`);
@@ -135,12 +136,8 @@ export class CardBattle implements OnInit {
       this.showStatus(`${enemy.name} shows no mercy — Hard treated as Again!`);
     }
 
-    // ── FSRS scheduling ───────────────────────────────────────────────────
-
     const updated = this.fsrs.grade(card, effectiveRating);
     await this.idb.saveCard(updated);
-
-    // ── Damage calculation ────────────────────────────────────────────────
 
     const playerMissed = effectiveRating === Rating.Again;
     let playerDmg = 0;
@@ -161,8 +158,6 @@ export class CardBattle implements OnInit {
       enemyDmg = Math.round(Math.floor(effectiveBaseAtk / 2) * atkMult);
     }
 
-    // ── Crit scroll ───────────────────────────────────────────────────────
-
     if (effectiveRating === Rating.Good && run.activeEffects.includes('crit')) {
       playerDmg = Math.round(DMG_EASY * playerAtkMult);
       const newEffects = run.activeEffects.filter(e => e !== 'crit');
@@ -170,14 +165,11 @@ export class CardBattle implements OnInit {
       this.showStatus('Iron Sword activates!');
     }
 
-    // ── Per-enemy ability side effects ────────────────────────────────────
-
     if (effectiveRating === Rating.Again) {
       if (enemy.ability === 'cram') {
         this.cramBonus.update(b => b + 3);
         this.showStatus(`${enemy.name} studies your mistake — ATK +3! (now ${enemy.atk + this.cramBonus()})`);
       }
-
       if (enemy.ability === 'soul-drain') {
         const currentRun = this.run()!;
         const newMaxHp = Math.max(0, currentRun.maxHp - 5);
@@ -232,8 +224,6 @@ export class CardBattle implements OnInit {
       this.showStatus('Shell absorbed the hit — no damage!');
     }
 
-    // ── Shield item ───────────────────────────────────────────────────────
-
     let newInventory = [...run.inventory];
     if (enemyDmg > 0) {
       const shieldIdx = newInventory.findIndex(i => i.type === 'shield');
@@ -244,13 +234,9 @@ export class CardBattle implements OnInit {
       }
     }
 
-    // ── Apply HP changes ──────────────────────────────────────────────────
-
     const currentRun = this.run()!;
     const newPlayerHp = Math.max(0, currentRun.hp - enemyDmg);
     let newEnemyHp = Math.max(0, currentRun.enemyHp - playerDmg);
-
-    // ── Damage flash ──────────────────────────────────────────────────────
 
     if (enemyDmg > 0) {
       this.damage.set(-enemyDmg);
@@ -261,8 +247,6 @@ export class CardBattle implements OnInit {
     }
     setTimeout(() => { this.damage.set(null); this.damageTarget.set(null); }, 800);
 
-    // ── Knight revive ─────────────────────────────────────────────────────
-
     const knightRevived = currentRun.activeEffects.includes('revive-used');
     if (enemy.ability === 'revive' && newEnemyHp <= 0 && !knightRevived) {
       newEnemyHp = 20;
@@ -270,18 +254,13 @@ export class CardBattle implements OnInit {
       this.showStatus(`${enemy.name} revives at 20 HP!`);
     }
 
-    // ── Dragon enrage ─────────────────────────────────────────────────────
-
     if (enemy.ability === 'enrage' && newEnemyHp <= enemy.maxHp / 2 && !currentRun.activeEffects.includes('enraged')) {
       await this.updateRun({ activeEffects: [...currentRun.activeEffects, 'enraged'] });
       this.showStatus(`${enemy.name} enrages — ATK doubled!`);
     }
 
-    // ── Persist state ─────────────────────────────────────────────────────
-
     await this.updateRun({ hp: newPlayerHp, enemyHp: newEnemyHp, inventory: newInventory });
 
-    // ── Record card rated ─────────────────────────────────────────────────
     const ratingKey = (
       effectiveRating === Rating.Again ? 'again' :
       effectiveRating === Rating.Hard  ? 'hard'  :
@@ -289,10 +268,10 @@ export class CardBattle implements OnInit {
     ) as 'again' | 'hard' | 'good' | 'easy';
 
     await this.statsService.recordCardRated({
-      rating:       ratingKey,
-      cardId:       card.id,
-      damageDealt:  playerDmg,
-      damageTaken:  enemyDmg,
+      rating:      ratingKey,
+      cardId:      card.id,
+      damageDealt: playerDmg,
+      damageTaken: enemyDmg,
     });
 
     this.flipped.set(false);
@@ -338,8 +317,6 @@ export class CardBattle implements OnInit {
 
     updates.inventory = newInventory;
     await this.updateRun(updates);
-
-    // ── Record item used ──────────────────────────────────────────────────
     await this.statsService.recordItemUsed(item.type);
   }
 
@@ -348,12 +325,16 @@ export class CardBattle implements OnInit {
     if (!run) return;
 
     await this.updateRun({ roomsCleared: run.roomsCleared + 1 });
-
-    // ── Record enemy defeated ─────────────────────────────────────────────
     await this.statsService.recordEnemyDefeated(run.currentEnemy.id);
 
     const lootChance = run.activeEffects.includes('better-loot') ? 0.85 : 0.7;
-    const offer = this.enemyService.rollLootWithChance(run.currentEnemy, lootChance);
+
+    // In endless mode, bosses have no loot table — give them a generic roll
+    const lootEnemy = run.endless && run.currentEnemy.lootTable.length === 0
+      ? { ...run.currentEnemy, lootTable: ['potion', 'shield', 'crit', 'skip'] as any }
+      : run.currentEnemy;
+
+    const offer = this.enemyService.rollLootWithChance(lootEnemy, lootChance);
     if (offer) {
       this.lootOffer.set(offer);
       this.pendingNextRoom.set(true);
@@ -390,12 +371,25 @@ export class CardBattle implements OnInit {
     if (!run) return;
 
     const nextRoom = run.currentRoom + 1;
-    if (nextRoom > run.totalRooms) { await this.endRun(true); return; }
 
-    const nextEnemy = this.enemyService.getEnemyForRoom(nextRoom, run.totalRooms, run.difficulty);
+    // ── Normal mode: check if dungeon is complete ─────────────────────────
+    if (!run.endless && nextRoom > run.totalRooms) {
+      await this.endRun(true);
+      return;
+    }
+
+    // ── Endless mode: keep going with random enemies ──────────────────────
+    const nextWave = (run.endlessWave ?? 0) + 1;
+    const nextEnemy = run.endless
+      ? this.enemyService.getEndlessEnemy(nextWave)
+      : this.enemyService.getEnemyForRoom(nextRoom, run.totalRooms, run.difficulty);
+
     const cards = await this.idb.getDueCards(run.deckId);
 
-    const hpMult = run.atkMult ?? 1;
+    // Scale HP — in endless mode ramp difficulty slightly each wave
+    const hpMult = run.endless
+      ? (run.atkMult ?? 1) * (1 + nextWave * 0.05)
+      : (run.atkMult ?? 1);
     const scaledMaxHp = Math.round(nextEnemy.maxHp * hpMult);
     const scaledEnemy = { ...nextEnemy, maxHp: scaledMaxHp };
 
@@ -405,7 +399,6 @@ export class CardBattle implements OnInit {
     this.shellAlternator.set(0);
     this.shellActive.set(false);
     this.bleedDamage.set(5);
-
     this.rollSpriteVariant();
     this.enemyInfoOpen.set(false);
 
@@ -416,12 +409,25 @@ export class CardBattle implements OnInit {
       consecutiveAgain: 0,
       activeEffects: run.activeEffects.filter(e => e === 'better-loot'),
       cardQueue: cards.map(c => c.id),
+      endlessWave: run.endless ? nextWave : (run.endlessWave ?? 0),
     });
 
     this.queue.set(cards);
     this.currentIndex.set(0);
     this.flipped.set(false);
     this.pendingNextRoom.set(false);
+  }
+
+  /** Player chose to continue into endless mode after clearing the dungeon. */
+  async startEndless() {
+    const run = this.run();
+    if (!run) return;
+
+    this.showEndlessPrompt.set(false);
+
+    // Mark run as endless and immediately advance into wave 1
+    await this.updateRun({ endless: true, endlessWave: 0 });
+    await this.advanceRoom();
   }
 
   private async endRun(isVictory: boolean) {
@@ -439,7 +445,6 @@ export class CardBattle implements OnInit {
       this.goldEarned.set(total);
     }
 
-    // ── Record run outcome ────────────────────────────────────────────────
     if (isVictory) {
       const deck = (await this.idb.getAllDecks()).find(d => d.id === run.deckId);
       await this.statsService.recordRunWon({
@@ -453,6 +458,14 @@ export class CardBattle implements OnInit {
     }
 
     this.victory.set(isVictory);
+
+    // Victory on a normal run → show endless prompt instead of run-over screen
+    if (isVictory && !run.endless) {
+      this.showEndlessPrompt.set(true);
+      await this.idb.clearRunState();
+      return;
+    }
+
     this.runOver.set(true);
     await this.idb.clearRunState();
   }
@@ -474,8 +487,19 @@ export class CardBattle implements OnInit {
     this.spriteVariant.set(Math.random() < 0.5 ? 'a' : 'b');
   }
 
-  goBack() {
-    this.idb.clearRunState();
+  async goBack() {
+    // Endless mode: record final wave count as a potential best run, then exit.
+    // Normal mid-run: counts as abandoned (runsStarted already incremented).
+    const run = this.run();
+    if (run?.endless && (run.endlessWave ?? 0) > 0) {
+      const deck = (await this.idb.getAllDecks()).find(d => d.id === run.deckId);
+      await this.statsService.recordEndlessExit({
+        endlessWave: run.endlessWave ?? 0,
+        difficulty:  run.difficulty,
+        deckName:    deck?.name ?? 'Unknown',
+      });
+    }
+    await this.idb.clearRunState();
     this.router.navigate(['/deck']);
   }
 

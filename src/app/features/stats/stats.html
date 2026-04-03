@@ -1,7 +1,7 @@
 <div class="stats-page">
   <header class="stats-header">
     <button class="back-btn" (click)="goBack()">← Back</button>
-    <h1>Hall of Records</h1>
+    <h1>Stats</h1>
     <div class="gold-display">
       <span class="gold-coin"></span>
       <span class="gold-amount">{{ gold() }}</span>
@@ -154,7 +154,10 @@
     @if (topItem(); as item) {
       <div class="item-pill">
         <span class="item-pill-label">Most used item</span>
-        <span class="item-pill-value">{{ item.label }} ({{ item.count }}×)</span>
+        <div class="item-pill-content">
+          <span class="item-icon item-{{ item.type }}"></span>
+          <span class="item-pill-value">{{ item.label }} ({{ item.count }}×)</span>
+        </div>
       </div>
     }
   </section>

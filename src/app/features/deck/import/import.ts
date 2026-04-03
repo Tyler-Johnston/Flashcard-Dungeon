@@ -320,6 +320,8 @@ export class ImportComponent {
       atkMult: diffConfig.atkMult,
       goldMult: diffConfig.goldMult,
       playerAtkMult: diffConfig.playerAtkMult,
+      endless: false,
+      endlessWave: 0,
     });
 
     this.router.navigate(['/dungeon']);

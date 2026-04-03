@@ -96,9 +96,16 @@
   </div>
 
   <!-- Toolbar -->
-<div class="deck-toolbar">
+  <div class="deck-toolbar">
     <button class="shop-btn" (click)="goShop()">⚑ Shop</button>
-    <button class="shop-btn" (click)="goStats()">Stats</button>
+    <button class="shop-btn" (click)="goStats()">
+      <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:4px;">
+        <rect x="1" y="9" width="3" height="6" fill="currentColor"/>
+        <rect x="6" y="5" width="3" height="10" fill="currentColor"/>
+        <rect x="11" y="2" width="3" height="13" fill="currentColor"/>
+      </svg>
+      Stats
+    </button>
     <div class="gold-display">
       <span class="gold-coin"></span>
       <span class="gold-amount">{{ gold() }}</span>
