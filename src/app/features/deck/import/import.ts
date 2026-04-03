@@ -153,19 +153,18 @@ export class ImportComponent {
       ? `The topic is: ${topic}.`
       : 'The topic is: Spanish vocabulary.';
 
+ 
     const prompt =
       `Generate a list of flashcard pairs I can study. ${topicLine}\n\n` +
-      `Format each card on its own line as:\n` +
-      `front - back\n\n` +
-      `Rules:\n` +
-      `- One card per line\n` +
-      `- Separate front and back with " - " (space, dash, space)\n` +
-      `- No numbering, no bullet points, no extra commentary\n` +
-      `- Aim for 30–50 cards\n\n` +
-      `Example output:\n` +
+      `Output ONLY the raw list — nothing else. No introduction, no explanation, no markdown, no code blocks, no backticks, no headers, no bullet points, no numbering. Just the pairs, one per line.\n\n` +
+      `Format: front - back\n\n` +
+      `Aim for 30–50 cards.\n\n` +
+      `Example of the exact output format expected:\n` +
       `hola - hello\n` +
       `adiós - goodbye\n` +
-      `gracias - thank you`;
+      `gracias - thank you\n` +
+      `por favor - please\n\n` +
+      `Start the list immediately. Do not write anything before or after it.`;
 
     navigator.clipboard.writeText(prompt).then(() => {
       this.promptCopied.set(true);
